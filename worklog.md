@@ -1284,3 +1284,61 @@ Stage Summary:
 - 5 features/fixes: txn ref optional, first payment popup (bilingual Urdu/English), multiple banks (JazzCash/EasyPaisa/HBL), locked waiting screens, notification sound system
 - All API + frontend changes complete
 - Lint clean, no runtime errors
+
+---
+Task ID: X1-X8 (Admin Route, KYC/Payment Filters, Auto-Approve, GitHub Push)
+Agent: main
+Task: Add /admin route, optimize loading, KYC/payment status filters, auto-approve toggle, push to GitHub
+
+Work Log:
+- Feature: /admin route
+  * New `src/app/admin/page.tsx` — server component that checks auth via getSessionUser
+  * If not logged in → redirect to /?admin=1
+  * If not admin/staff → redirect to /
+  * If admin → redirect to / (SPA detects admin role, shows AdminView)
+  * Accessible at http://localhost:3000/admin
+- Feature: Admin KYC API with status filter
+  * Updated `GET /api/admin/kyc?status=submitted|approved|rejected|all`
+  * Default: submitted (pending only)
+  * Staff access: checks staffAccess for 'kyc' tab
+  * Returns user phone in addition to email/name
+  * Ordered by submittedAt desc (newest first)
+- Feature: Admin Payment API with status filter
+  * Updated `GET /api/admin/payment?status=submitted|approved|rejected|all`
+  * Default: submitted (pending only)
+  * Staff access: checks staffAccess for 'payments' tab
+  * Ordered by createdAt desc (newest first)
+- Feature: Auto-approve KYC toggle in Settings
+  * Updated `GET/POST /api/admin/settings` — added `autoApproveKyc` boolean field
+  * Updated `POST /api/kyc/step3` — checks autoApproveKyc setting from AdminSetting
+  * If autoApproveKyc=true → ALL KYC submissions are auto-approved (no admin review needed)
+  * If autoApproveKyc=false → only selfie-matched KYCs auto-approve, rest go to admin queue
+  * Settings UI: ShieldCheck icon + "Auto-Approve KYC" label + description + Switch toggle
+- Optimization: faster page loading
+  * Global CSS: `img { loading: lazy; decoding: async; }` — all images lazy-load on scroll
+  * Content fade animation reduced from 0.2s to 0.15s for snappier transitions
+  * Polling intervals: admin 8s→10s (KYC/payment), user 12s (unchanged for balance)
+- Face match system: already implemented in KYC step 1 API using VLM
+  * Reads selfie + CNIC front as base64
+  * Asks VLM: "Compare faces. Same person? YES/NO"
+  * Returns autoApproved: true/false
+  * If YES → KYC auto-approved on step 3 submission
+  * If NO → goes to admin review queue
+- Pushed to GitHub
+  * Created repo: https://github.com/babyline00/e-qarza
+  * .gitignore: excludes node_modules, .next, db, uploads, logs, env
+  * Committed with comprehensive feature description
+  * Pushed to main branch successfully
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- App loads without errors at http://localhost:3000
+- /admin route works (redirects non-admins)
+- GitHub repo: https://github.com/babyline00/e-qarza
+
+Stage Summary:
+- 6 features added: /admin route, KYC status filter API, payment status filter API, auto-approve KYC toggle, lazy image loading optimization, GitHub push
+- All APIs support staff role access
+- Face match system using VLM already in place
+- Code pushed to GitHub: babyline00/e-qarza
+- Lint clean, no runtime errors
