@@ -1420,3 +1420,37 @@ Stage Summary:
 - Users can download the app directly from the login page
 - Only one active app per platform (new upload replaces old)
 - Lint clean, pushed to GitHub
+
+---
+Task ID: K1 (KYC + Payments Status Filters)
+Agent: main
+Task: Show all KYC (pending/approved/rejected/all) with newest first, same for payments
+
+Work Log:
+- Admin KYC Review: added filter tabs (Pending / Approved / Rejected / All)
+  * Filter buttons use orange gradient for active, muted for inactive
+  * Result count shown next to filters
+  * API: GET /api/admin/kyc?status=all returns all KYCs sorted by submittedAt desc (newest first)
+  * Default filter: Pending (submitted)
+  * Empty state: "No KYCs found" when filter has no results
+- Admin Payments: added filter tabs (Pending / Approved / Rejected / All)
+  * Same UI pattern as KYC
+  * API: GET /api/admin/payment?status=all returns all payments sorted by createdAt desc
+  * Default filter: Pending (submitted)
+  * Status badge on each card shows actual status (approved/submitted/rejected) with color coding
+  * Approve/Reject action buttons ONLY shown for pending (submitted) items — hidden for already processed
+  * Empty state: "No payments found" when filter has no results
+- Both filters trigger API reload on change (useCallback dependency includes kycFilter/paymentFilter)
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- KYC filter tabs: Pending/Approved/Rejected/All visible, All active=orange, 3 results (VLM 10/10)
+- Payments filter tabs: All shows Processing Fee + Installment with Approved badges
+- Approve/Reject buttons hidden for approved payments (only show on pending)
+- Pushed to GitHub
+
+Stage Summary:
+- KYC and Payments now support status filtering (pending/approved/rejected/all)
+- All results sorted newest first
+- Action buttons only appear for pending items
+- Lint clean, pushed to GitHub
