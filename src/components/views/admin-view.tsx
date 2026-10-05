@@ -68,6 +68,8 @@ export function AdminView() {
   const [activeTab, setActiveTab] = useState('analytics')
   const [acting, setActing] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [kycFilter, setKycFilter] = useState('submitted')
+  const [paymentFilter, setPaymentFilter] = useState('submitted')
 
   // Play sound when new KYC/payment submissions arrive
   useNotificationSound(true, 10000)
@@ -81,8 +83,8 @@ export function AdminView() {
     setLoading(true)
     try {
       const [k, p] = await Promise.all([
-        canAccess('kyc') ? api<{ profiles: KycItem[] }>('/api/admin/kyc') : Promise.resolve({ profiles: [] }),
-        canAccess('payments') ? api<{ payments: PaymentItem[] }>('/api/admin/payment') : Promise.resolve({ payments: [] }),
+        canAccess('kyc') ? api<{ profiles: KycItem[] }>(`/api/admin/kyc?status=${kycFilter}`) : Promise.resolve({ profiles: [] }),
+        canAccess('payments') ? api<{ payments: PaymentItem[] }>(`/api/admin/payment?status=${paymentFilter}`) : Promise.resolve({ payments: [] }),
       ])
       setKycs(k.profiles)
       setPayments(p.payments)
@@ -91,7 +93,7 @@ export function AdminView() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [kycFilter, paymentFilter])
 
   useEffect(() => {
     load()
@@ -147,8 +149,8 @@ export function AdminView() {
   function renderContent() {
     switch (activeTab) {
       case 'analytics': return <AdminAnalyticsTab onNavigate={setActiveTab} />
-      case 'kyc': return <KycReviewContent kycs={kycs} loading={loading} acting={acting} actKyc={actKyc} />
-      case 'payments': return <PaymentsContent payments={payments} loading={loading} acting={acting} actPayment={actPayment} />
+      case 'kyc': return <KycReviewContent kycs={kycs} loading={loading} acting={acting} actKyc={actKyc} filter={kycFilter} setFilter={setKycFilter} />
+      case 'payments': return <PaymentsContent payments={payments} loading={loading} acting={acting} actPayment={actPayment} filter={paymentFilter} setFilter={setPaymentFilter} />
       case 'applications': return <AdminApplicationsTab />
       case 'withdrawals': return <AdminWithdrawalsTab />
       case 'manage': return <AdminManageTab />
@@ -281,38 +283,58 @@ export function AdminView() {
 }
 
 // --- KYC Review Content ---
-function KycReviewContent({ kycs, loading, acting, actKyc }: {
+function KycReviewContent({ kycs, loading, acting, actKyc, filter, setFilter }: {
   kycs: KycItem[]
   loading: boolean
   acting: string | null
   actKyc: (id: string, action: 'approve' | 'reject') => void
+  filter: string
+  setFilter: (v: string) => void
 }) {
-  if (loading && kycs.length === 0) {
-    return (
-      <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <span className="text-sm">Loading KYC applications…</span>
-      </div>
-    )
-  }
-
-  if (kycs.length === 0) {
-    return (
-      <Card className="rounded-2xl border-dashed">
-        <CardContent className="py-12 text-center">
-          <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <ShieldCheck className="size-7" />
-          </span>
-          <p className="font-medium">No pending KYCs</p>
-          <p className="text-sm text-muted-foreground mt-1">Submitted KYC applications will appear here.</p>
-        </CardContent>
-      </Card>
-    )
-  }
+  const filters = [
+    { value: 'submitted', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'all', label: 'All' },
+  ]
 
   return (
     <div className="space-y-4">
-      {kycs.map((k) => (
+      {/* Status filter tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {filters.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={cn(
+              'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition',
+              filter === f.value ? 'bg-brand-gradient text-white shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-muted-foreground shrink-0">{kycs.length} result{kycs.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {loading && kycs.length === 0 ? (
+        <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
+          <Loader2 className="size-6 animate-spin text-primary" />
+          <span className="text-sm">Loading KYC applications…</span>
+        </div>
+      ) : kycs.length === 0 ? (
+        <Card className="rounded-2xl border-dashed">
+          <CardContent className="py-12 text-center">
+            <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <ShieldCheck className="size-7" />
+            </span>
+            <p className="font-medium">No KYCs found</p>
+            <p className="text-sm text-muted-foreground mt-1">No KYC applications match this filter.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {kycs.map((k) => (
         <Card key={k.id} className="rounded-2xl overflow-hidden">
           <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/30 px-5 py-3">
             <div className="flex items-center gap-3">
@@ -360,79 +382,105 @@ function KycReviewContent({ kycs, loading, acting, actKyc }: {
           </CardContent>
         </Card>
       ))}
+        </div>
+      )}
     </div>
   )
 }
 
 // --- Payments Review Content ---
-function PaymentsContent({ payments, loading, acting, actPayment }: {
+function PaymentsContent({ payments, loading, acting, actPayment, filter, setFilter }: {
   payments: PaymentItem[]
   loading: boolean
   acting: string | null
   actPayment: (id: string, action: 'approve' | 'reject') => void
+  filter: string
+  setFilter: (v: string) => void
 }) {
-  if (loading && payments.length === 0) {
-    return (
-      <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <span className="text-sm">Loading payments…</span>
-      </div>
-    )
-  }
-
-  if (payments.length === 0) {
-    return (
-      <Card className="rounded-2xl border-dashed">
-        <CardContent className="py-12 text-center">
-          <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <Banknote className="size-7" />
-          </span>
-          <p className="font-medium">No pending payments</p>
-          <p className="text-sm text-muted-foreground mt-1">Submitted payment proofs will appear here.</p>
-        </CardContent>
-      </Card>
-    )
-  }
+  const filters = [
+    { value: 'submitted', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'all', label: 'All' },
+  ]
 
   return (
     <div className="space-y-4">
-      {payments.map((p) => (
-        <Card key={p.id} className="rounded-2xl">
-          <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/30 px-5 py-3">
-            <div>
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <Banknote className="size-4" />
-                {p.type === 'processing_fee' ? 'Processing Fee' : `Installment #${p.installmentNumber}`}
-              </h3>
-              <p className="text-xs text-muted-foreground">{p.userName || p.userEmail} • {p.planName ? `${p.planName} plan • ` : ''}{fmtDateTime(p.createdAt)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold">{fmtPKR(p.amount)}</p>
-              <Badge variant="outline">Pending</Badge>
-            </div>
-          </div>
-          <CardContent className="pt-4 space-y-3">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><p className="text-xs text-muted-foreground">Transaction Ref</p><p className="font-mono text-xs">{p.txnRef || '—'}</p></div>
-              <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium capitalize">{p.type.replace('_', ' ')}</p></div>
-            </div>
-            {p.proofPath && (
-              <a href={p.proofPath} target="_blank" rel="noreferrer" className="block rounded-md border overflow-hidden hover:ring-2 ring-primary/40 transition">
-                <img src={p.proofPath} alt="Payment proof" className="max-h-64 w-full object-contain bg-muted/30" />
-                <p className="text-xs text-center py-1.5 border-t bg-muted/30">Click to view full size</p>
-              </a>
+      {/* Status filter tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {filters.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setFilter(f.value)}
+            className={cn(
+              'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition',
+              filter === f.value ? 'bg-brand-gradient text-white shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
             )}
-            <div className="flex gap-2 pt-1">
-              <Button size="sm" className="bg-success text-white hover:bg-success/90" onClick={() => actPayment(p.id, 'approve')} disabled={acting === p.id}>
-                {acting === p.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Approve
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => actPayment(p.id, 'reject')} disabled={acting === p.id}>
-                <X className="size-4" /> Reject
-              </Button>
-            </div>
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-muted-foreground shrink-0">{payments.length} result{payments.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {loading && payments.length === 0 ? (
+        <div className="py-12 flex flex-col items-center gap-2 text-muted-foreground">
+          <Loader2 className="size-6 animate-spin text-primary" />
+          <span className="text-sm">Loading payments…</span>
+        </div>
+      ) : payments.length === 0 ? (
+        <Card className="rounded-2xl border-dashed">
+          <CardContent className="py-12 text-center">
+            <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <Banknote className="size-7" />
+            </span>
+            <p className="font-medium">No payments found</p>
+            <p className="text-sm text-muted-foreground mt-1">No payments match this filter.</p>
           </CardContent>
         </Card>
-      ))}
+      ) : (
+        <div className="space-y-4">
+          {payments.map((p) => (
+            <Card key={p.id} className="rounded-2xl">
+              <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/30 px-5 py-3">
+                <div>
+                  <h3 className="text-base font-bold flex items-center gap-2">
+                    <Banknote className="size-4" />
+                    {p.type === 'processing_fee' ? 'Processing Fee' : `Installment #${p.installmentNumber}`}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{p.userName || p.userEmail} • {p.planName ? `${p.planName} plan • ` : ''}{fmtDateTime(p.createdAt)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{fmtPKR(p.amount)}</p>
+                  <Badge variant="outline" className={cn('capitalize', p.status === 'approved' && 'bg-success/15 text-success', p.status === 'rejected' && 'bg-destructive/10 text-destructive')}>{p.status}</Badge>
+                </div>
+              </div>
+              <CardContent className="pt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><p className="text-xs text-muted-foreground">Transaction Ref</p><p className="font-mono text-xs">{p.txnRef || '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium capitalize">{p.type.replace('_', ' ')}</p></div>
+                </div>
+                {p.proofPath && (
+                  <a href={p.proofPath} target="_blank" rel="noreferrer" className="block rounded-md border overflow-hidden hover:ring-2 ring-primary/40 transition">
+                    <img src={p.proofPath} alt="Payment proof" className="max-h-64 w-full object-contain bg-muted/30" />
+                    <p className="text-xs text-center py-1.5 border-t bg-muted/30">Click to view full size</p>
+                  </a>
+                )}
+                {(p.status === 'submitted') && (
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" className="bg-success text-white hover:bg-success/90" onClick={() => actPayment(p.id, 'approve')} disabled={acting === p.id}>
+                      {acting === p.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Approve
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => actPayment(p.id, 'reject')} disabled={acting === p.id}>
+                      <X className="size-4" /> Reject
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
