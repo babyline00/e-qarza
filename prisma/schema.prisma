@@ -146,6 +146,8 @@ model Notification {
   title     String
   message   String
   type      String   @default("info") // info | success | warning | error
+  channel   String   @default("in_app") // in_app | email | sms
+  deliveryStatus String @default("delivered") // delivered | sent | failed
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }

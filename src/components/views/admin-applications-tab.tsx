@@ -7,12 +7,13 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { api } from '@/lib/api-client'
 import { fmtPKR, fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import {
-  FileText, Loader2, CheckCircle2, XCircle, Inbox, Wallet, Download,
+  FileText, Loader2, CheckCircle2, XCircle, Inbox, Wallet, Download, Filter, X,
 } from 'lucide-react'
 
 interface AppItem {
@@ -49,18 +50,26 @@ export function AdminApplicationsTab() {
   const [rejecting, setRejecting] = useState<AppItem | null>(null)
   const [reason, setReason] = useState('')
   const [acting, setActing] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await api<{ applications: AppItem[] }>('/api/admin/applications')
+      const params = new URLSearchParams()
+      if (statusFilter) params.set('status', statusFilter)
+      if (fromDate) params.set('from', fromDate)
+      if (toDate) params.set('to', toDate)
+      const qs = params.toString()
+      const r = await api<{ applications: AppItem[] }>(`/api/admin/applications${qs ? '?' + qs : ''}`)
       setApps(r.applications)
     } catch (e) {
       toast.error((e as Error).message)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [statusFilter, fromDate, toDate])
 
   useEffect(() => {
     load()
@@ -98,10 +107,38 @@ export function AdminApplicationsTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open('/api/admin/export?type=applications', '_blank')}>
-          <Download className="size-3.5" /> Export CSV
-        </Button>
+      {/* filter bar */}
+      <div className="rounded-xl border bg-card p-3 space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="size-4 text-muted-foreground shrink-0" />
+          <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
+            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue placeholder="All statuses" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="fee_pending">Fee Due</SelectItem>
+              <SelectItem value="fee_submitted">Fee Verifying</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-1">
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-8 w-36 text-xs" />
+            <span className="text-xs text-muted-foreground">to</span>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-8 w-36 text-xs" />
+          </div>
+          {(statusFilter || fromDate || toDate) && (
+            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => { setStatusFilter(''); setFromDate(''); setToDate('') }}>
+              <X className="size-3" /> Clear
+            </Button>
+          )}
+          <div className="ml-auto">
+            <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={() => window.open('/api/admin/export?type=applications', '_blank')}>
+              <Download className="size-3.5" /> Export CSV
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">{apps.length} application{apps.length !== 1 ? 's' : ''}</p>
       </div>
       {apps.length === 0 ? (
         <Card className="rounded-2xl border-dashed">

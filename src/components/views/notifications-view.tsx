@@ -1,17 +1,19 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/shared/page-header'
 import { api } from '@/lib/api-client'
+import { toast } from 'sonner'
 import { timeAgo } from '@/lib/format'
-import { Bell, CheckCircle2, AlertCircle, Info, CheckCheck, Inbox, Clock } from 'lucide-react'
+import { Bell, CheckCircle2, AlertCircle, Info, CheckCheck, Inbox, Clock, Mail, MessageSquare, Send, Loader2 } from 'lucide-react'
 
 export function NotificationsView() {
   const { notifications, setNotifications } = useAppStore()
+  const [sending, setSending] = useState(false)
 
   // mark all as read on view
   useEffect(() => {
@@ -44,17 +46,43 @@ export function NotificationsView() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <PageHeader title="Notifications" description="Stay updated on your application and payments." icon={Bell}>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={async () => {
-            await api('/api/notifications', { method: 'PATCH', body: JSON.stringify({ all: true }) })
-            setNotifications(notifications.map((n) => ({ ...n, read: true })))
-          }}
-          className="gap-2"
-        >
-          <CheckCheck className="size-4" /> Mark all read
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              setSending(true)
+              try {
+                const r = await api<{ results: { channel: string; status: string; recipient: string }[] }>('/api/notify/test', { method: 'POST' })
+                toast.success(`Test sent via ${r.results.map((x) => x.channel).join(' + ')}`)
+                // refresh notifications after a short delay
+                setTimeout(async () => {
+                  const fresh = await api<{ notifications: typeof notifications }>('/api/notifications')
+                  setNotifications(fresh.notifications)
+                }, 500)
+              } catch (e) {
+                toast.error((e as Error).message)
+              } finally {
+                setSending(false)
+              }
+            }}
+            disabled={sending}
+            className="gap-2"
+          >
+            {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Test
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              await api('/api/notifications', { method: 'PATCH', body: JSON.stringify({ all: true }) })
+              setNotifications(notifications.map((n) => ({ ...n, read: true })))
+            }}
+            className="gap-2"
+          >
+            <CheckCheck className="size-4" /> Mark all read
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="mt-6 space-y-3">
@@ -78,10 +106,21 @@ export function NotificationsView() {
                   <Icon className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold leading-tight">{n.title}</p>
                     {!n.read && (
                       <Badge className="h-5 border-0 bg-primary text-primary-foreground text-[10px]">New</Badge>
+                    )}
+                    {n.channel && n.channel !== 'in_app' && (
+                      <Badge variant="outline" className="h-5 text-[10px] gap-1">
+                        {n.channel === 'email' ? <Mail className="size-2.5" /> : <MessageSquare className="size-2.5" />}
+                        {n.channel}
+                      </Badge>
+                    )}
+                    {n.deliveryStatus && n.deliveryStatus !== 'delivered' && (
+                      <Badge variant={n.deliveryStatus === 'failed' ? 'destructive' : 'secondary'} className="h-5 text-[10px]">
+                        {n.deliveryStatus}
+                      </Badge>
                     )}
                   </div>
                   <p className="mt-0.5 text-sm text-muted-foreground">{n.message}</p>

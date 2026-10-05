@@ -17,6 +17,8 @@ export async function GET() {
       title: n.title,
       message: n.message,
       type: n.type,
+      channel: n.channel,
+      deliveryStatus: n.deliveryStatus,
       read: n.read,
       createdAt: n.createdAt.toISOString(),
     })),

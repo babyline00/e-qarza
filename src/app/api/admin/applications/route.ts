@@ -9,12 +9,23 @@ async function requireAdmin() {
 }
 
 // GET /api/admin/applications — list all loan applications with user info
+// Optional filters: status, from (date), to (date)
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const status = new URL(req.url).searchParams.get('status')
-  const where = status ? { status } : {}
+  const params = new URL(req.url).searchParams
+  const status = params.get('status')
+  const from = params.get('from')
+  const to = params.get('to')
+
+  const where: Record<string, unknown> = {}
+  if (status) where.status = status
+  if (from || to) {
+    where.appliedAt = {}
+    if (from) where.appliedAt.gte = new Date(from + 'T00:00:00')
+    if (to) where.appliedAt.lte = new Date(to + 'T23:59:59')
+  }
 
   const apps = await db.loanApplication.findMany({
     where,

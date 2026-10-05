@@ -31,6 +31,7 @@ interface Stats {
   byPlan: { name: string; count: number; amount: number }[]
   monthlyTrend: { label: string; apps: number; disbursed: number }[]
   paymentStatus: { approved: number; submitted: number; rejected: number }
+  repaymentByPlan: { name: string; rate: number; paid: number; total: number }[]
 }
 
 // hex colors (recharts SVG attributes don't reliably support oklch())
@@ -222,6 +223,34 @@ export function AdminAnalyticsTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Repayment rate by plan */}
+      {stats.repaymentByPlan && stats.repaymentByPlan.some((p) => p.total > 0) && (
+        <Card className="rounded-2xl mt-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Repayment Rate by Plan</CardTitle>
+            <CardDescription>% of installments paid on time per plan.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 pt-2">
+              {stats.repaymentByPlan.filter((p) => p.total > 0).map((p) => (
+                <div key={p.name}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-medium">{p.name}</span>
+                    <span className="text-muted-foreground">{p.paid}/{p.total} paid • <strong className={p.rate >= 80 ? 'text-success' : p.rate >= 50 ? 'text-amber-700' : 'text-destructive'}>{p.rate}%</strong></span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={p.rate >= 80 ? 'bg-success' : p.rate >= 50 ? 'bg-amber-500' : 'bg-destructive'}
+                      style={{ width: `${p.rate}%`, transition: 'width 0.6s ease' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

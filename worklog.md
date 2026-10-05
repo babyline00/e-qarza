@@ -556,3 +556,72 @@ Unresolved / next-phase recommendations:
 - Admin: filter applications/users by date range
 - Credit score system (based on repayment history)
 - Push notifications (PWA)
+
+---
+Task ID: S6-1 to S6-7 (webDevReview cron round 6)
+Agent: main
+Task: QA, add credit score system, email/SMS simulation, admin date-range filters, repayment rate chart, styling polish
+
+Work Log:
+- QA via agent-browser + VLM: dashboard stable (NO BUGS), profile avatar + dark mode toggle working
+- Feature: credit score system (repayment-history based)
+  * New `src/lib/credit-score.ts` — computes 300-900 score based on: payment completion ratio (40%), completed loans (20%), total volume repaid (15%), overdue penalty (15%), KYC verification (10%)
+  * Rating tiers: excellent (750+), good (650+), fair (550+), poor (<550)
+  * Computes recommended max loan based on score tier
+  * New API `GET /api/credit-score`
+  * New `CreditScoreCard` component — circular SVG gauge (animated stroke-dashoffset), rating badge, factor stats (on-time/KYC/overdue/closed loans), recommended max loan footer
+  * Added to dashboard between repayment chart and recent notifications
+  * Verified: test user score = 400 (poor) — correct since 1/6 installments paid (17%); VLM 10/10
+- Feature: email/SMS notification simulation
+  * Added `channel` + `deliveryStatus` fields to Notification schema + db:push
+  * New `src/lib/notify.ts` — `sendEmailNotification` + `sendSmsNotification` simulate 95% delivery success, mask recipients (te****@domain, 0300******), create Notification records with channel + status
+  * New API `POST /api/notify/test` — sends test email + SMS to current user
+  * Updated `/api/notifications` + `/api/me` to return channel + deliveryStatus
+  * Updated notifications-view: "Test" button (with loading spinner), channel badges (Mail/MessageSquare icons), delivery status badges (sent=secondary, failed=destructive)
+  * Bug fix: Prisma client needed regeneration after schema change (db:generate) + dev server restart
+  * Verified: test sent → email + sms notifications appear with "sent" status + masked recipients (VLM 9/10)
+- Feature: admin date-range filters (applications)
+  * Updated `GET /api/admin/applications` — supports `status`, `from`, `to` query params with date range filtering on appliedAt
+  * Added filter bar to admin-applications-tab: status Select (All/Fee Due/Verifying/Active/Completed/Rejected), from/to date inputs, Clear button, application count
+  * Export CSV button moved into filter bar
+- Feature: admin dashboard enhanced chart (repayment rate by plan)
+  * Updated `GET /api/admin/stats` — computes repaymentByPlan (paid/total installments per plan, rate %)
+  * Added "Repayment Rate by Plan" card to admin-analytics-tab — horizontal progress bars per plan, color-coded (green ≥80%, amber ≥50%, red <50%), animated width transition, only shows plans with installments
+- Styling polish
+  * Avatar now shows in side drawer menu (AvatarImage with avatarPath, falls back to initials)
+  * Credit score gauge animated with stroke-dashoffset transition
+  * Repayment rate bars animated with width transition
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Dashboard: Credit Score card renders with gauge (400/Poor), factors, max loan (VLM 10/10)
+  * Notifications: Test button works, email + sms notifications appear with channel badges + sent status (VLM 9/10)
+  * Credit score API: returns correct score (400) based on 1/6 installments paid
+  * Notify API: returns masked recipients (te****@loan.pk, 0300******)
+- Dev log: no errors after Prisma regeneration + server restart
+
+Stage Summary:
+- 4 new features added and verified: credit score system (300-900 with gauge), email/SMS notification simulation (with channel badges + test button), admin date-range filters (status + from/to), repayment rate by plan chart (color-coded progress bars)
+- Styling polish: avatar in drawer, animated gauge + bars
+- All features respect orange E-Qarza design system + work in both light and dark modes
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has: credit scoring, multi-channel notifications (in-app/email/SMS), admin date-range filtering, repayment rate analytics
+- Full lifecycle now includes credit score visibility on dashboard encouraging good repayment behavior
+- Admin can filter applications by status + date range, see repayment rates per plan
+- Users can test their notification channels and see delivery status
+
+Unresolved / next-phase recommendations:
+- WebSocket real-time notifications (currently polled every 12s)
+- Unit tests for credit score logic, eligibility, overdue reminders, loan math
+- Multi-language support (Urdu locale)
+- User profile photo: allow crop/resize before upload
+- Credit score history (track score changes over time)
+- Admin: filter users by date range + credit score tier
+- PWA push notifications
+- Loan refinancing (apply for new loan after completing one)
+- Admin: broadcast notification to all users
+- Credit score factor breakdown modal (detailed explanation of how score is computed)
+- Notification preferences (let users choose email vs SMS vs in-app)

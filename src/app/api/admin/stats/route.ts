@@ -72,6 +72,21 @@ export async function GET() {
     db.payment.count({ where: { status: 'rejected' } }),
   ])
 
+  // repayment rate by plan (paid installments / total installments)
+  const repaymentByPlan = await Promise.all(
+    plans.map(async (p) => {
+      const apps = await db.loanApplication.findMany({
+        where: { planId: p.id, status: { in: ['active', 'completed'] } },
+        include: { installments: { select: { status: true } } },
+      })
+      const allInstallments = apps.flatMap((a) => a.installments)
+      const total = allInstallments.length
+      const paid = allInstallments.filter((i) => i.status === 'paid').length
+      const rate = total > 0 ? Math.round((paid / total) * 100) : 0
+      return { name: p.name, rate, paid, total }
+    })
+  )
+
   return NextResponse.json({
     stats: {
       totals: {
@@ -89,6 +104,7 @@ export async function GET() {
       byPlan,
       monthlyTrend: months,
       paymentStatus: { approved, submitted, rejected },
+      repaymentByPlan,
     },
   })
 }

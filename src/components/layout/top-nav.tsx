@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useAppStore, type View } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
@@ -169,6 +169,7 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
           <SheetHeader className="bg-brand-gradient text-white p-5 pb-6 text-left">
             <div className="flex items-center gap-3">
               <Avatar className="size-14 border-2 border-white/30">
+                {user.avatarPath ? <AvatarImage src={user.avatarPath} alt={user.name || 'Avatar'} /> : null}
                 <AvatarFallback className="bg-white/20 text-white text-base font-bold">{initials}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">

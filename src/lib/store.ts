@@ -73,6 +73,8 @@ export interface NotificationData {
   title: string
   message: string
   type: string
+  channel?: string
+  deliveryStatus?: string
   read: boolean
   createdAt: string
 }

@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
 import { SettlementCalculator } from '@/components/shared/settlement-calculator'
 import { RepaymentChart } from './repayment-chart'
+import { CreditScoreCard } from './credit-score-card'
 import { fmtPKR, fmtDate, timeAgo, loanTotals } from '@/lib/format'
 import {
   Wallet, FileText, Bell, ArrowRight, ChevronRight,
@@ -203,6 +204,11 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
           <RepaymentChart application={activeApp} />
         </div>
       )}
+
+      {/* Credit score card */}
+      <div className="mt-4">
+        <CreditScoreCard />
+      </div>
 
       {/* Recent notifications */}
       <Card className="mt-4 rounded-2xl shadow-sm">
