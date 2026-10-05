@@ -18,8 +18,10 @@ import { HelpView } from '@/components/views/help-view'
 import { TransactionsView } from '@/components/views/transactions-view'
 import { AdminView } from '@/components/views/admin-view'
 import { DashboardSkeleton } from '@/components/shared/dashboard-skeleton'
+import { KeyboardShortcutsHelp } from '@/components/shared/keyboard-shortcuts-help'
 import { TopNav } from '@/components/layout/top-nav'
 import { Footer } from '@/components/layout/footer'
+import { useKeyboardShortcuts } from '@/lib/use-keyboard-shortcuts'
 import { Loader2 } from 'lucide-react'
 
 interface MeResponse {
@@ -76,6 +78,10 @@ export function AppShell() {
     }
     logout()
   }, [logout])
+
+  // keyboard shortcuts — must be called unconditionally (hooks rules)
+  // enabled only for active regular users
+  useKeyboardShortcuts({ onNavigate: setView, enabled: !!user && user.role !== 'admin' && user.stage === 'active' })
 
   if (loading) {
     return (
@@ -168,6 +174,7 @@ export function AppShell() {
       <TopNav onLogout={handleLogout} onRefresh={refresh} onNavigate={setView} activeView={view} />
       <main id="main-content" className="flex-1">{content}</main>
       <Footer />
+      <KeyboardShortcutsHelp />
     </div>
   )
 }

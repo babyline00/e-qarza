@@ -149,7 +149,11 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
           >
             <Bell className={`size-5 ${unread > 0 ? 'animate-soft-pulse' : ''}`} />
             {unread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-pop">
+              <span
+                className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-pop"
+                role="status"
+                aria-label={`${unread} unread notification${unread !== 1 ? 's' : ''}`}
+              >
                 {unread}
               </span>
             )}

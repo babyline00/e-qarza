@@ -168,3 +168,12 @@ model AdminSetting {
   key   String @unique
   value String
 }
+
+model CreditScoreHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  score     Int
+  rating    String
+  createdAt DateTime @default(now())
+}
+

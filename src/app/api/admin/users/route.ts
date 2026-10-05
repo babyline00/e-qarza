@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
+import { computeCreditScore } from '@/lib/credit-score'
 
 async function requireAdmin() {
   const u = await getSessionUser()
@@ -37,20 +38,41 @@ export async function GET(req: NextRequest) {
     },
   })
 
-  const data = users.map((u) => ({
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    phone: u.phone,
-    stage: u.stage,
-    banned: u.banned,
-    createdAt: u.createdAt.toISOString(),
-    kycStatus: u.kycProfile?.status || null,
-    cnicName: u.kycProfile?.cnicName || null,
-    applicationCount: u._count.applications,
-  }))
+  const data = await Promise.all(
+    users.map(async (u) => {
+      const credit = u.kycProfile?.status === 'approved' ? await computeCreditScore(u.id) : null
+      return {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        phone: u.phone,
+        stage: u.stage,
+        banned: u.banned,
+        createdAt: u.createdAt.toISOString(),
+        kycStatus: u.kycProfile?.status || null,
+        cnicName: u.kycProfile?.cnicName || null,
+        applicationCount: u._count.applications,
+        creditScore: credit?.score ?? null,
+        creditRating: credit?.rating ?? null,
+      }
+    })
+  )
 
-  return NextResponse.json({ users: data })
+  // filter by credit tier if requested
+  const tier = new URL(req.url).searchParams.get('tier')
+  let filtered = data
+  if (tier && tier !== 'all') {
+    filtered = data.filter((u) => {
+      if (!u.creditRating) return false
+      if (tier === 'excellent') return u.creditRating === 'excellent'
+      if (tier === 'good') return u.creditRating === 'good'
+      if (tier === 'fair') return u.creditRating === 'fair'
+      if (tier === 'poor') return u.creditRating === 'poor'
+      return true
+    })
+  }
+
+  return NextResponse.json({ users: filtered })
 }
 
 // POST /api/admin/users — ban / unban / delete { userId, action }

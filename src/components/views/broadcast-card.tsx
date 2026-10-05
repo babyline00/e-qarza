@@ -16,6 +16,7 @@ export function BroadcastCard() {
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
   const [type, setType] = useState('info')
+  const [channel, setChannel] = useState('in_app')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState<number | null>(null)
 
@@ -29,13 +30,14 @@ export function BroadcastCard() {
     try {
       const r = await api<{ sent: number }>('/api/admin/broadcast', {
         method: 'POST',
-        body: JSON.stringify({ title, message, type }),
+        body: JSON.stringify({ title, message, type, channel }),
       })
-      toast.success(`Broadcast sent to ${r.sent} users`)
+      toast.success(`Broadcast sent (${r.sent} deliveries)`)
       setSent(r.sent)
       setTitle('')
       setMessage('')
       setType('info')
+      setChannel('in_app')
     } catch (e) {
       toast.error((e as Error).message)
     } finally {
@@ -60,17 +62,31 @@ export function BroadcastCard() {
             <Label htmlFor="bc-title">Title</Label>
             <Input id="bc-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Scheduled maintenance" maxLength={120} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="info">Info</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-                <SelectItem value="warning">Warning</SelectItem>
-                <SelectItem value="error">Error</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid gap-3 grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Info</SelectItem>
+                  <SelectItem value="success">Success</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Channel</Label>
+              <Select value={channel} onValueChange={setChannel}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in_app">In-App</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="sms">SMS</SelectItem>
+                  <SelectItem value="all">All Channels</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <div className="space-y-1.5">

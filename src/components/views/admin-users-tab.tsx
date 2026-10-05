@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { api } from '@/lib/api-client'
 import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import { BroadcastCard } from './broadcast-card'
 import {
-  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X,
+  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X, TrendingUp,
 } from 'lucide-react'
 
 interface UserItem {
@@ -26,6 +27,15 @@ interface UserItem {
   kycStatus: string | null
   cnicName: string | null
   applicationCount: number
+  creditScore: number | null
+  creditRating: string | null
+}
+
+const RATING_CLS: Record<string, string> = {
+  excellent: 'bg-success/15 text-success',
+  good: 'bg-blue-100 text-blue-700',
+  fair: 'bg-amber-100 text-amber-700',
+  poor: 'bg-destructive/10 text-destructive',
 }
 
 export function AdminUsersTab() {
@@ -35,11 +45,16 @@ export function AdminUsersTab() {
   const [acting, setActing] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkActing, setBulkActing] = useState(false)
+  const [tierFilter, setTierFilter] = useState<string>('all')
 
-  const load = useCallback(async (q?: string) => {
+  const load = useCallback(async (q?: string, tier?: string) => {
     setLoading(true)
     try {
-      const r = await api<{ users: UserItem[] }>(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`)
+      const params = new URLSearchParams()
+      if (q) params.set('q', q)
+      if (tier && tier !== 'all') params.set('tier', tier)
+      const qs = params.toString()
+      const r = await api<{ users: UserItem[] }>(`/api/admin/users${qs ? '?' + qs : ''}`)
       setUsers(r.users)
     } catch (e) {
       toast.error((e as Error).message)
@@ -49,14 +64,14 @@ export function AdminUsersTab() {
   }, [])
 
   useEffect(() => {
-    load()
-  }, [load])
+    load(query, tierFilter)
+  }, [load, query, tierFilter])
 
   // debounced search
   useEffect(() => {
-    const t = setTimeout(() => load(query), 350)
+    const t = setTimeout(() => load(query, tierFilter), 350)
     return () => clearTimeout(t)
-  }, [query, load])
+  }, [query, tierFilter, load])
 
   async function act(userId: string, action: 'ban' | 'unban' | 'delete') {
     if (action === 'delete' && !confirm('Permanently delete this user and all their data?')) return
@@ -64,7 +79,7 @@ export function AdminUsersTab() {
     try {
       await api('/api/admin/users', { method: 'POST', body: JSON.stringify({ userId, action }) })
       toast.success(action === 'ban' ? 'User banned' : action === 'unban' ? 'User restored' : 'User deleted')
-      load(query)
+      load(query, tierFilter)
     } catch (e) {
       toast.error((e as Error).message)
     } finally {
@@ -101,7 +116,7 @@ export function AdminUsersTab() {
     toast.success(`${ok} user${ok !== 1 ? 's' : ''} ${action === 'ban' ? 'banned' : 'restored'}${fail > 0 ? `, ${fail} failed` : ''}`)
     setSelected(new Set())
     setBulkActing(false)
-    load(query)
+    load(query, tierFilter)
   }
 
   const stageLabel: Record<string, { label: string; cls: string }> = {
@@ -119,9 +134,9 @@ export function AdminUsersTab() {
       {/* Broadcast */}
       <BroadcastCard />
 
-      {/* search + export */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-md">
+      {/* search + tier filter + export */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             value={query}
@@ -130,6 +145,16 @@ export function AdminUsersTab() {
             className="pl-9 rounded-xl"
           />
         </div>
+        <Select value={tierFilter} onValueChange={setTierFilter}>
+          <SelectTrigger className="w-36 h-9 rounded-xl"><SelectValue placeholder="Credit tier" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All credit tiers</SelectItem>
+            <SelectItem value="excellent">Excellent (750+)</SelectItem>
+            <SelectItem value="good">Good (650-749)</SelectItem>
+            <SelectItem value="fair">Fair (550-649)</SelectItem>
+            <SelectItem value="poor">{'Poor (<550)'}</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => window.open('/api/admin/export?type=users', '_blank')}>
           <Download className="size-3.5" /> CSV
         </Button>
@@ -207,6 +232,11 @@ export function AdminUsersTab() {
                     <p className="text-xs text-muted-foreground truncate">{u.email}{u.phone && ` • ${u.phone}`}</p>
                     <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                       <Badge variant="outline" className={`text-[10px] h-5 border-0 ${st.cls}`}>{st.label}</Badge>
+                      {u.creditScore != null && (
+                        <Badge variant="outline" className={`text-[10px] h-5 border-0 ${RATING_CLS[u.creditRating || ''] || 'bg-muted text-muted-foreground'}`}>
+                          <TrendingUp className="size-2.5 mr-0.5" /> {u.creditScore}
+                        </Badge>
+                      )}
                       {u.applicationCount > 0 && (
                         <span className="text-[10px] text-muted-foreground">{u.applicationCount} loan app{u.applicationCount > 1 ? 's' : ''}</span>
                       )}

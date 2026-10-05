@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { api } from '@/lib/api-client'
-import { fmtPKR } from '@/lib/format'
+import { fmtPKR, fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import { TrendingUp, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Award, Banknote, Info } from 'lucide-react'
 
@@ -42,10 +43,18 @@ const iconMap: Record<string, React.ElementType> = {
   CheckCircle2, AlertTriangle, ShieldCheck, Award, Banknote, Info,
 }
 
+interface HistoryEntry {
+  id: string
+  score: number
+  rating: string
+  createdAt: string
+}
+
 export function CreditScoreCard() {
   const [data, setData] = useState<ScoreData | null>(null)
   const [loading, setLoading] = useState(true)
   const [showBreakdown, setShowBreakdown] = useState(false)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -55,6 +64,16 @@ export function CreditScoreCard() {
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
+
+  // fetch history when modal opens
+  useEffect(() => {
+    if (!showBreakdown) return
+    let cancelled = false
+    api<{ history: HistoryEntry[] }>('/api/credit-score/history')
+      .then((r) => { if (!cancelled) setHistory(r.history) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [showBreakdown])
 
   if (loading) {
     return (
@@ -210,6 +229,32 @@ export function CreditScoreCard() {
           <div className="rounded-lg bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground">Base score starts at 300. Maximum possible: 900.</p>
           </div>
+
+          {/* Score history chart */}
+          {history.length > 1 && (
+            <div className="mt-4">
+              <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                <TrendingUp className="size-4 text-primary" /> Score History (90 days)
+              </p>
+              <div className="h-40 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={history.map((h) => ({ date: fmtDate(h.createdAt), score: h.score }))} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#6B7280' }} tickLine={false} axisLine={false} />
+                    <YAxis domain={[300, 900]} tick={{ fontSize: 10, fill: '#6B7280' }} tickLine={false} axisLine={false} width={32} />
+                    <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 12 }} />
+                    <ReferenceLine y={750} stroke="#10B981" strokeDasharray="3 3" strokeOpacity={0.4} />
+                    <ReferenceLine y={650} stroke="#3B82F6" strokeDasharray="3 3" strokeOpacity={0.4} />
+                    <ReferenceLine y={550} stroke="#F59E0B" strokeDasharray="3 3" strokeOpacity={0.4} />
+                    <Line type="monotone" dataKey="score" stroke="#F97316" strokeWidth={2.5} dot={{ r: 3, fill: '#F97316' }} isAnimationActive={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center mt-1">
+                Green line = Excellent threshold (750) · Blue = Good (650) · Amber = Fair (550)
+              </p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
