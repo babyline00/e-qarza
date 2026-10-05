@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppStore } from '@/lib/store'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
+import { formatPhone, stripPhone } from '@/lib/phone-format'
 import { fmtRupees } from '@/lib/format'
 import { Pencil, Save, X, Loader2, Lock } from 'lucide-react'
 
@@ -47,7 +48,7 @@ export function ProfileEditCard() {
       await api('/api/kyc/update', {
         method: 'POST',
         body: JSON.stringify({
-          phone,
+          phone: stripPhone(phone),
           address,
           city,
           occupation,
@@ -97,7 +98,7 @@ export function ProfileEditCard() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="ed-phone">Phone Number</Label>
-              <Input id="ed-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03001234567" inputMode="numeric" maxLength={11} />
+              <Input id="ed-phone" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="0300-1234567" inputMode="numeric" maxLength={12} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ed-address">Residential Address</Label>

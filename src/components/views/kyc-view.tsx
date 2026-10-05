@@ -13,6 +13,7 @@ import { KycHeader } from '@/components/shared/kyc-header'
 import { InfoBox } from '@/components/shared/info-box'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
+import { formatPhone, stripPhone } from '@/lib/phone-format'
 import { useAppStore } from '@/lib/store'
 import {
   Loader2, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck,
@@ -73,7 +74,7 @@ export function KycView({ onDone }: Props) {
       fd.append('cnicName', cnicName)
       fd.append('fatherName', fatherName)
       fd.append('dob', dob)
-      fd.append('phoneNumber', phoneNumber)
+      fd.append('phoneNumber', stripPhone(phoneNumber))
       fd.append('cnicFrontImage', cnicFront)
       fd.append('cnicBackImage', cnicBack)
       fd.append('selfieImage', selfie)
@@ -118,7 +119,7 @@ export function KycView({ onDone }: Props) {
     try {
       await api('/api/kyc/step3', {
         method: 'POST',
-        body: JSON.stringify({ referenceName, referencePhone, referenceRelation }),
+        body: JSON.stringify({ referenceName, referencePhone: stripPhone(referencePhone), referenceRelation }),
       })
       toast.success('KYC submitted for verification!')
       onDone()
@@ -203,10 +204,10 @@ export function KycView({ onDone }: Props) {
                     id="phone"
                     className="rounded-lg"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="03001234567"
+                    onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
+                    placeholder="0300-1234567"
                     inputMode="numeric"
-                    maxLength={11}
+                    maxLength={12}
                   />
                 </div>
               </div>
@@ -385,10 +386,10 @@ export function KycView({ onDone }: Props) {
                     id="refPhone"
                     className="rounded-lg"
                     value={referencePhone}
-                    onChange={(e) => setReferencePhone(e.target.value)}
-                    placeholder="03001234567"
+                    onChange={(e) => setReferencePhone(formatPhone(e.target.value))}
+                    placeholder="0300-1234567"
                     inputMode="numeric"
-                    maxLength={11}
+                    maxLength={12}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">

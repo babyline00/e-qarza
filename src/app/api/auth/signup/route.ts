@@ -20,21 +20,25 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
-  const { email, password, name } = body as { email?: string; password?: string; name?: string }
-  if (!email || !password) {
-    return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+  const { phone, password, name } = body as { phone?: string; password?: string; name?: string }
+  if (!phone || !password) {
+    return NextResponse.json({ error: 'Phone number and password are required' }, { status: 400 })
   }
-  const normalized = email.trim().toLowerCase()
+  // validate Pakistani phone: 03XXXXXXXXX (11 digits)
+  const normalizedPhone = phone.replace(/[^0-9]/g, '')
+  if (!/^03\d{9}$/.test(normalizedPhone)) {
+    return NextResponse.json({ error: 'Phone number must be 11 digits starting with 03 (e.g. 03001234567)' }, { status: 400 })
+  }
   if (password.length < 6) {
     return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
   }
-  const existing = await db.user.findUnique({ where: { email: normalized } })
+  const existing = await db.user.findUnique({ where: { phone: normalizedPhone } })
   if (existing) {
-    return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
+    return NextResponse.json({ error: 'An account with this phone number already exists. Please login instead.' }, { status: 409 })
   }
   const user = await db.user.create({
     data: {
-      email: normalized,
+      phone: normalizedPhone,
       name: name?.trim() || null,
       passwordHash: hashPassword(password),
       stage: 'kyc',
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
   await setSession(user.id)
   return NextResponse.json({
     id: user.id,
-    email: user.email,
+    phone: user.phone,
     name: user.name,
     role: user.role,
     stage: user.stage,
@@ -56,10 +60,11 @@ export async function GET() {
   return NextResponse.json({
     id: user.id,
     email: user.email,
-    name: user.name,
     phone: user.phone,
+    name: user.name,
     role: user.role,
     stage: user.stage,
+    avatarPath: user.avatarPath,
     kyc: user.kycProfile
       ? {
           status: user.kycProfile.status,

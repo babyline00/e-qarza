@@ -1067,3 +1067,50 @@ Stage Summary:
 - Custom code injection ready for chat widgets, analytics, etc.
 - All mobile-responsive with native-app bottom navigation
 - Lint clean, no runtime errors
+
+---
+Task ID: P1-P7 (Phone-Based Auth + Input Formatting)
+Agent: main
+Task: Convert auth from email to phone-based login/signup, add formatted phone/CNIC inputs, auto-redirect invalid users to signup
+
+Work Log:
+- Schema: phone is now the primary unique identifier (was email); email is optional (String?)
+  * Updated existing users with phone numbers from KYC data
+  * Fixed admin phone to 03000000001, staff to 03000000002
+- New `src/lib/phone-format.ts`:
+  * formatPhone: 03001234567 → 0300-1234567 (auto-adds hyphen after 4 digits)
+  * stripPhone: 0300-1234567 → 03001234567 (removes formatting for API)
+  * isValidPhone: validates 03XXXXXXXXX (11 digits)
+  * formatCNIC: 3520212345671 → 35202-1234567-1 (5-7-1 format)
+  * stripCNIC / isValidCNIC for CNIC validation
+- Auth API rewritten:
+  * Signup: accepts phone + password + name (no email required); validates 03XXXXXXXXX
+  * Login: looks up by phone first; if not found, tries email as fallback (for admin/staff accounts); if not found → returns 404 with redirectSignup: true; if wrong password → returns 401 with redirectSignup: true
+  * If user is banned (non-admin) → returns 403
+  * Email fallback uses findFirst (not findUnique) since email is now nullable
+- Auth view rewritten:
+  * Phone Number input with Phone icon + formatted display (0300-1234567)
+  * Dynamic heading: "Welcome Back" (login) / "Create Account" (signup)
+  * "Don't have an account? Sign up" / "Already have an account? Login" links
+  * Auto-redirect: when login fails with "sign up" or "not found" in error message → auto-switches to signup tab + pre-fills the phone number
+  * Updated demo accounts: Admin phone 03000000001 / admin123
+- KYC view: phone inputs now use formatPhone for display + stripPhone for API submission (both identity phone and reference phone)
+- Profile edit: phone input uses formatPhone for display + stripPhone for save
+- Input formatting: phone shows 0300-1234567 (auto-hyphen), maxLength=12
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- agent-browser E2E:
+  * Auth page: phone-based login with formatted input (VLM 10/10)
+  * Invalid phone login: auto-switches to signup tab with phone pre-filled ✓
+  * Admin login via phone (0300-0000001 / admin123): works → admin dashboard ✓
+  * Phone formatting: 03009999999 → 0300-9999999 ✓
+- Dev log: no errors after findFirst fix
+
+Stage Summary:
+- Auth fully converted from email to phone-based
+- Phone inputs auto-format (0300-1234567) across auth, KYC, and profile
+- Invalid users auto-redirected to signup with phone pre-filled
+- Admin/staff can login via phone or email (backwards compat)
+- CNIC format utility ready (XXXXX-XXXXXXX-X)
+- Lint clean, no runtime errors
