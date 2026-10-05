@@ -12,6 +12,7 @@ import { api } from '@/lib/api-client'
 import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import { BroadcastCard } from './broadcast-card'
+import { ScheduledBroadcastsList } from './scheduled-broadcasts-list'
 import {
   Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X, TrendingUp, Eye,
 } from 'lucide-react'
@@ -135,6 +136,7 @@ export function AdminUsersTab() {
     <div className="space-y-4">
       {/* Broadcast */}
       <BroadcastCard />
+      <ScheduledBroadcastsList />
 
       {/* search + tier filter + export */}
       <div className="flex items-center gap-2 flex-wrap">

@@ -192,7 +192,7 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
                 {nextDue && (nextDue.status === 'pending' || nextDue.status === 'overdue') && (
                   <Button
                     onClick={() => setPayInstallment(nextDue)}
-                    className="rounded-lg bg-brand-gradient text-white hover:opacity-90"
+                    className={`rounded-lg bg-brand-gradient text-white hover:opacity-90 ${nextDue.status === 'overdue' ? 'animate-soft-pulse' : ''}`}
                   >
                     Pay Now
                   </Button>

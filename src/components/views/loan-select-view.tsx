@@ -6,9 +6,16 @@ import { Card, CardContent } from '@/components/ui/card'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { fmtPKR, loanTotals } from '@/lib/format'
-import { Wallet, Loader2, Check, ChevronRight, Coins } from 'lucide-react'
+import { Wallet, Loader2, Check, ChevronRight, Coins, Sparkles, TrendingUp } from 'lucide-react'
 import { InfoBox } from '@/components/shared/info-box'
 import { EligibilityBadge } from '@/components/shared/eligibility-badge'
+
+const RATING_CLS: Record<string, string> = {
+  excellent: 'bg-success/15 text-success',
+  good: 'bg-blue-100 text-blue-700',
+  fair: 'bg-amber-100 text-amber-700',
+  poor: 'bg-destructive/10 text-destructive',
+}
 
 interface Props {
   onApplied: () => void
@@ -17,7 +24,7 @@ interface Props {
 const HERO_BULLETS = ['0% Markup', 'Quick Approval', 'Flexible Installments']
 
 export function LoanSelectView({ onApplied }: Props) {
-  const { plans } = useAppStore()
+  const { plans, credit } = useAppStore()
   const [applying, setApplying] = useState<string | null>(null)
 
   async function apply(planId: string) {
@@ -59,6 +66,30 @@ export function LoanSelectView({ onApplied }: Props) {
           </ul>
         </div>
       </div>
+
+      {/* Credit discount banner */}
+      {credit && credit.discountPct > 0 && (
+        <div className="rounded-2xl border border-success/30 bg-success/5 p-4 flex items-center gap-3 animate-fade-up">
+          <span className="grid size-10 place-items-center rounded-xl bg-success/15 text-success shrink-0">
+            <Sparkles className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-bold text-success">
+              {credit.discountPct}% Processing Fee Discount!
+              </p>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${RATING_CLS[credit.rating] || ''}`}>
+                <TrendingUp className="inline size-2.5 mr-0.5" />{credit.rating} credit
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {credit.completedLoans > 0
+                ? `Loyalty reward for ${credit.completedLoans} completed loan${credit.completedLoans > 1 ? 's' : ''} + good repayment history.`
+                : 'Your good credit standing earns you a discount on processing fees.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Section title */}
       <div className="px-1">
@@ -117,6 +148,15 @@ export function LoanSelectView({ onApplied }: Props) {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Monthly &asymp; {fmtPKR(t.monthlyInstallment)}
+                    {plan.discountPct && plan.originalProcessingFee ? (
+                      <span className="ml-1.5 text-success font-medium">
+                        • Fee {fmtPKR(plan.processingFee)}{' '}
+                        <span className="line-through opacity-60">{fmtPKR(plan.originalProcessingFee)}</span>{' '}
+                        (-{plan.discountPct}%)
+                      </span>
+                    ) : (
+                      <span className="ml-1.5">• Fee {fmtPKR(plan.processingFee)}</span>
+                    )}
                   </p>
                 </div>
                 <ChevronRight className="size-5 text-muted-foreground shrink-0" />

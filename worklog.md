@@ -829,3 +829,64 @@ Unresolved / next-phase recommendations:
 - Onboarding tour: highlight specific UI elements (spotlight effect)
 - Admin: export filtered users/applications by date range
 - User: download loan agreement + receipts as PDF (already done, can enhance with batch download)
+
+---
+Task ID: S10-1 to S10-7 (webDevReview cron round 10)
+Agent: main
+Task: QA (onboarding double-close bug), add scheduled broadcast list, loan refinancing with credit discounts, styling polish
+
+Work Log:
+- QA via agent-browser + VLM: found onboarding tour had double close buttons (Dialog default + custom X)
+- Bug fix: onboarding tour double close button
+  * Added `showCloseButton={false}` to DialogContent in onboarding-tour.tsx to hide the default close button, keeping only the custom X
+  * Verified: only ONE close button now (VLM 10/10)
+- Feature: admin scheduled broadcast list + cancel UI
+  * New `ScheduledBroadcastsList` component — shows pending + sent scheduled broadcasts with title/message/channel/scheduled date, Pending/Sent badges, cancel (trash) button for unsent broadcasts, 15s auto-refresh, empty state hidden when no broadcasts
+  * Added below BroadcastCard in admin Users tab
+  * Verified: shows "Holiday Greeting" (1 pending) with cancel button (VLM 10/10)
+- Feature: loan refinancing with improved terms for good credit
+  * Updated `GET /api/plans` — computes credit-based processing fee discount (excellent=25%, good=15%, fair=5%, poor=0%), returns originalProcessingFee + discountPct per plan + credit info
+  * Updated `GET /api/me` — same discount computation, returns credit info (rating/discountPct/completedLoans)
+  * Updated store: added `credit: CreditInfo | null` state + setCredit action
+  * Updated loan-select view: credit discount banner (green, with Sparkles icon + rating badge + loyalty message), plan cards show discounted fee with strikethrough original + (-X%) label
+  * Verified: test user with "good" credit (1 completed loan, all installments paid) gets 15% discount — Micro Rs 250→Rs 213, Essential Rs 1,000→Rs 850 (VLM 9/10)
+- Styling polish
+  * Pay Now button pulses (animate-soft-pulse) when installment is overdue
+  * Credit discount banner uses animate-fade-up entrance
+  * Onboarding tour close button fix (single X)
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Onboarding tour: single close button (VLM 10/10)
+  * Scheduled broadcasts list: shows pending broadcast with cancel button (VLM 10/10)
+  * Credit discount: 15% banner + discounted fees with strikethrough (VLM 9/10)
+  * Plans API: returns correct discount (good=15%, poor=0%)
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 1 bug fixed (onboarding double close button)
+- 2 new features added: admin scheduled broadcast list + cancel UI, loan refinancing with credit-based processing fee discounts (25%/15%/5% for excellent/good/fair)
+- Styling polish: overdue Pay Now pulse, discount banner animation
+- All features respect orange E-Qarza design system
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has: scheduled broadcast management, credit-based loan discounts rewarding good repayment behavior
+- Full lifecycle now includes: credit score → discount on future loans (refinancing with improved terms)
+- Admin can view + cancel scheduled broadcasts, users with good credit get automatic fee discounts
+- Onboarding tour fixed, overdue Pay Now button pulses for urgency
+
+Unresolved / next-phase recommendations:
+- WebSocket real-time notifications (currently polled every 12s)
+- Unit tests for all business logic
+- Multi-language support (Urdu locale)
+- Per-event-type notification preferences
+- PWA push notifications + service worker
+- Onboarding tour spotlight effect (highlight specific UI elements)
+- ARIA live regions for more dynamic content
+- Admin: export filtered users/applications by date range
+- User: batch download receipts as PDF
+- Loan refinancing: show previous loan history on apply page
+- Credit score: show trend arrow (up/down vs last week)
+- Admin: user detail with credit score timeline chart

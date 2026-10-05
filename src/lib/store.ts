@@ -95,6 +95,8 @@ export interface LoanPlanData {
   tenureMonths: number
   processingFee: number
   description?: string | null
+  originalProcessingFee?: number | null
+  discountPct?: number | null
 }
 
 export interface UserData {
@@ -108,6 +110,12 @@ export interface UserData {
   kyc?: KycData | null
 }
 
+export interface CreditInfo {
+  rating: string
+  discountPct: number
+  completedLoans: number
+}
+
 interface AppState {
   user: UserData | null
   kyc: KycData | null
@@ -115,6 +123,7 @@ interface AppState {
   notifications: NotificationData[]
   bankDetails: BankDetailData[]
   plans: LoanPlanData[]
+  credit: CreditInfo | null
   activeView: View
   loading: boolean
 
@@ -124,6 +133,7 @@ interface AppState {
   setNotifications: (n: NotificationData[]) => void
   setBankDetails: (b: BankDetailData[]) => void
   setPlans: (p: LoanPlanData[]) => void
+  setCredit: (c: CreditInfo | null) => void
   setView: (v: View) => void
   setLoading: (l: boolean) => void
   logout: () => void
@@ -136,6 +146,7 @@ export const useAppStore = create<AppState>((set) => ({
   notifications: [],
   bankDetails: [],
   plans: [],
+  credit: null,
   activeView: 'auth',
   loading: true,
 
@@ -145,6 +156,7 @@ export const useAppStore = create<AppState>((set) => ({
   setNotifications: (n) => set({ notifications: n }),
   setBankDetails: (b) => set({ bankDetails: b }),
   setPlans: (p) => set({ plans: p }),
+  setCredit: (c) => set({ credit: c }),
   setView: (v) => set({ activeView: v }),
   setLoading: (l) => set({ loading: l }),
   logout: () =>

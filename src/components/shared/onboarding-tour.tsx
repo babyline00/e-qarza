@@ -75,7 +75,7 @@ export function OnboardingTour() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <span className="grid size-12 place-items-center rounded-2xl bg-brand-gradient text-white">

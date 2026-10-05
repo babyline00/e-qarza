@@ -44,7 +44,7 @@ interface MeResponse {
 export function AppShell() {
   const {
     user, kyc, applications, activeView, loading,
-    setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setLoading, setView, logout,
+    setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setCredit, setLoading, setView, logout,
   } = useAppStore()
 
   const refresh = useCallback(async () => {
@@ -56,13 +56,14 @@ export function AppShell() {
       setNotifications(data.notifications as never)
       setBankDetails(data.banks as never)
       setPlans(data.plans as never)
+      setCredit((data as { credit?: unknown }).credit as never)
       if (!data.user) setView('auth')
     } catch {
       // ignore — keep current state
     } finally {
       setLoading(false)
     }
-  }, [setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setLoading, setView])
+  }, [setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setCredit, setLoading, setView])
 
   useEffect(() => {
     refresh()

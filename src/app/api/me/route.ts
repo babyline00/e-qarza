@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
 import { syncOverdueStatus } from '@/lib/overdue'
+import { computeCreditScore } from '@/lib/credit-score'
 
 // GET /api/me — aggregate state used by the SPA to route
 export async function GET() {
   const user = await getSessionUser()
-  if (!user) return NextResponse.json({ user: null, kyc: null, applications: [], notifications: [], banks: [], plans: [] })
+  if (!user) return NextResponse.json({ user: null, kyc: null, applications: [], notifications: [], banks: [], plans: [], credit: null })
 
   // lazily flag overdue installments
   await syncOverdueStatus()
@@ -25,6 +26,19 @@ export async function GET() {
     db.bankDetail.findMany({ where: { active: true }, orderBy: { createdAt: 'asc' } }),
     db.loanPlan.findMany({ where: { active: true }, orderBy: { amount: 'asc' } }),
   ])
+
+  // compute credit-based discount
+  let discountPct = 0
+  let creditRating: string | null = null
+  let completedLoans = 0
+  if (user.role !== 'admin') {
+    const score = await computeCreditScore(user.id)
+    creditRating = score.rating
+    completedLoans = score.factors.completedLoans
+    if (score.rating === 'excellent') discountPct = 25
+    else if (score.rating === 'good') discountPct = 15
+    else if (score.rating === 'fair') discountPct = 5
+  }
 
   return NextResponse.json({
     user: {
@@ -96,14 +110,22 @@ export async function GET() {
       accountNumber: b.accountNumber,
       iban: b.iban,
     })),
-    plans: plans.map((p) => ({
-      id: p.id,
-      name: p.name,
-      amount: p.amount,
-      interestRate: p.interestRate,
-      tenureMonths: p.tenureMonths,
-      processingFee: p.processingFee,
-      description: p.description,
-    })),
+    plans: plans.map((p) => {
+      const discountedFee = discountPct > 0
+        ? Math.round(p.processingFee * (1 - discountPct / 100))
+        : p.processingFee
+      return {
+        id: p.id,
+        name: p.name,
+        amount: p.amount,
+        interestRate: p.interestRate,
+        tenureMonths: p.tenureMonths,
+        processingFee: discountedFee,
+        description: p.description,
+        originalProcessingFee: discountPct > 0 ? p.processingFee : null,
+        discountPct: discountPct > 0 ? discountPct : null,
+      }
+    }),
+    credit: creditRating ? { rating: creditRating, discountPct, completedLoans } : null,
   })
 }
