@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 import { formatPhone, stripPhone } from '@/lib/phone-format'
 import { useAppStore } from '@/lib/store'
 import {
-  Loader2, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck,
+  Loader2, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck, Clock,
 } from 'lucide-react'
 
 interface Props {
@@ -37,12 +37,14 @@ export function KycView({ onDone }: Props) {
 
   // Step 1 state
   const [cnicName, setCnicName] = useState(kyc?.cnicName || '')
+  const [cnicNumber, setCnicNumber] = useState((kyc as { cnicNumber?: string })?.cnicNumber || '')
   const [fatherName, setFatherName] = useState(kyc?.fatherName || '')
   const [dob, setDob] = useState(kyc?.dob || '')
   const [phoneNumber, setPhoneNumber] = useState(kyc?.phoneNumber || '')
   const [cnicFront, setCnicFront] = useState<File | null>(null)
   const [cnicBack, setCnicBack] = useState<File | null>(null)
   const [selfie, setSelfie] = useState<File | null>(null)
+  const [selfieMatched, setSelfieMatched] = useState(false)
 
   // Step 2 state
   const [education, setEducation] = useState(kyc?.education || '')
@@ -60,8 +62,24 @@ export function KycView({ onDone }: Props) {
   const [referenceRelation, setReferenceRelation] = useState(kyc?.referenceRelation || '')
 
   async function submitStep1() {
-    if (!cnicName || !fatherName || !dob || !phoneNumber) {
+    if (!cnicName || !cnicNumber || !fatherName || !dob || !phoneNumber) {
       toast.error('Please fill all identity fields')
+      return
+    }
+    // Validate CNIC number
+    const cnicDigits = cnicNumber.replace(/[^0-9]/g, '')
+    if (!/^\d{13}$/.test(cnicDigits)) {
+      toast.error('CNIC number must be 13 digits (e.g. 35202-1234567-1)')
+      return
+    }
+    // Validate age 18+
+    const birth = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const m = today.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+    if (age < 18) {
+      toast.error(`You must be at least 18 years old. Your age: ${age} years.`)
       return
     }
     if (!cnicFront || !cnicBack || !selfie) {
@@ -72,6 +90,7 @@ export function KycView({ onDone }: Props) {
     try {
       const fd = new FormData()
       fd.append('cnicName', cnicName)
+      fd.append('cnicNumber', cnicDigits)
       fd.append('fatherName', fatherName)
       fd.append('dob', dob)
       fd.append('phoneNumber', stripPhone(phoneNumber))
@@ -81,7 +100,14 @@ export function KycView({ onDone }: Props) {
       const res = await fetch('/api/kyc/step1', { method: 'POST', body: fd, credentials: 'same-origin' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error || 'Failed to save step 1')
-      toast.success('Identity details saved')
+      // Check if selfie auto-matched CNIC
+      if (data.autoApproved) {
+        setSelfieMatched(true)
+        toast.success('Identity verified! Selfie matched CNIC ✅')
+      } else {
+        setSelfieMatched(false)
+        toast.success('Identity details saved')
+      }
       setStep(1)
     } catch (err) {
       toast.error((err as Error).message)
@@ -119,9 +145,9 @@ export function KycView({ onDone }: Props) {
     try {
       await api('/api/kyc/step3', {
         method: 'POST',
-        body: JSON.stringify({ referenceName, referencePhone: stripPhone(referencePhone), referenceRelation }),
+        body: JSON.stringify({ referenceName, referencePhone: stripPhone(referencePhone), referenceRelation, selfieMatched }),
       })
-      toast.success('KYC submitted for verification!')
+      toast.success(selfieMatched ? 'KYC auto-approved! Selfie matched CNIC ✅' : 'KYC submitted for verification!')
       onDone()
     } catch (err) {
       toast.error((err as Error).message)
@@ -188,14 +214,26 @@ export function KycView({ onDone }: Props) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="dob" className="text-sm font-medium">Date of Birth</Label>
+                  <Label htmlFor="cnicNumber" className="text-sm font-medium">CNIC Number</Label>
+                  <Input
+                    id="cnicNumber"
+                    className="rounded-lg"
+                    value={cnicNumber}
+                    onChange={(e) => setCnicNumber(e.target.value)}
+                    placeholder="35202-1234567-1"
+                    inputMode="numeric"
+                    maxLength={15}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="dob" className="text-sm font-medium">Date of Birth <span className="text-destructive">*</span>(must be 18+)</Label>
                   <Input
                     id="dob"
                     type="date"
                     className="rounded-lg"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    max={new Date().toISOString().slice(0, 10)}
+                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().slice(0, 10)}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -365,6 +403,23 @@ export function KycView({ onDone }: Props) {
           {/* STEP 3 */}
           {step === 2 && (
             <div className="space-y-5">
+              {selfieMatched ? (
+                <div className="flex items-center gap-3 rounded-lg bg-success/10 border border-success/30 p-3">
+                  <ShieldCheck className="size-5 text-success shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-success">Identity Auto-Verified ✅</p>
+                    <p className="text-xs text-muted-foreground">Your selfie matched your CNIC. Your KYC will be auto-approved on submission — no admin review needed!</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <Clock className="size-5 text-amber-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-amber-700">Manual Review Required</p>
+                    <p className="text-xs text-muted-foreground">Your selfie could not be auto-matched with your CNIC. Your KYC will be submitted for manual admin review.</p>
+                  </div>
+                </div>
+              )}
               <InfoBox>
                 Provide one person who knows you well. We only contact them if we cannot reach you.
               </InfoBox>

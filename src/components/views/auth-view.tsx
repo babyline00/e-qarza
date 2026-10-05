@@ -46,11 +46,12 @@ export function AuthView({ onAuthed }: Props) {
     } catch (err) {
       const msg = (err as Error).message
       toast.error(msg)
-      // If the API says redirect to signup, auto-switch to signup tab
-      if (msg.includes('sign up') || msg.includes('not found') || msg.includes('No account')) {
+      // Only redirect to signup if the phone number doesn't exist in DB
+      if (msg.includes('No account found') || msg.includes('not found')) {
         setSignupPhone(loginPhone)
         setMode('signup')
       }
+      // If wrong password (account exists), stay on login — don't redirect
     } finally {
       setLoading(false)
     }

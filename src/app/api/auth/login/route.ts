@@ -45,8 +45,9 @@ export async function POST(req: NextRequest) {
       include: { kycProfile: true },
     })
     if (emailUser) {
+      // Found by email — check password (do NOT redirect to signup, account exists)
       if (!verifyPassword(password, emailUser.passwordHash)) {
-        return NextResponse.json({ error: 'Invalid phone/password or account not found. Please sign up with your phone number.', redirectSignup: true }, { status: 401 })
+        return NextResponse.json({ error: 'Invalid password. Please try again.' }, { status: 401 })
       }
       await setSession(emailUser.id)
       return NextResponse.json({
@@ -80,15 +81,16 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // User not found — return redirectSignup flag so frontend switches to signup
+    // Phone truly not found — redirect to signup
     return NextResponse.json({
       error: 'No account found with this phone number. Please sign up to create an account.',
       redirectSignup: true,
     }, { status: 404 })
   }
 
+  // User found by phone — check password (do NOT redirect to signup, account exists)
   if (!verifyPassword(password, user.passwordHash)) {
-    return NextResponse.json({ error: 'Invalid phone/password. Please check your credentials or sign up if you don\'t have an account.', redirectSignup: true }, { status: 401 })
+    return NextResponse.json({ error: 'Invalid password. Please try again or reset your password.' }, { status: 401 })
   }
 
   // Check if user is banned

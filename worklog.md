@@ -1114,3 +1114,59 @@ Stage Summary:
 - Admin/staff can login via phone or email (backwards compat)
 - CNIC format utility ready (XXXXX-XXXXXXX-X)
 - Lint clean, no runtime errors
+
+---
+Task ID: F1-F6 (Auth Fixes + KYC Validation + Selfie Auto-Match)
+Agent: main
+Task: Fix login redirect logic, add CNIC number field, validate DOB 18+, selfie vs CNIC auto-match for auto-approve
+
+Work Log:
+- Fix: Login with existing phone + wrong password → NO LONGER redirects to signup
+  * Login API: if user found by phone but password wrong → returns "Invalid password. Please try again or reset your password." (no redirectSignup flag)
+  * Login API: if user found by email fallback + password wrong → same error (no redirect)
+  * Login API: only returns redirectSignup: true when phone truly doesn't exist in DB
+  * Frontend: only redirects to signup when message includes "No account found" (not on wrong password)
+- Fix: Signup with existing phone → blocks creation, redirects to login
+  * Signup API: checks if phone exists → returns 409 "already exists" (already had this)
+  * Frontend: catches "already exists" → auto-switches to Login tab + pre-fills phone (already had this)
+- Schema: Added `cnicNumber String?` to KycProfile model + db:push + db:generate
+- KYC Step 1 API:
+  * Added CNIC number validation: must be 13 digits (XXXXX-XXXXXXX-X)
+  * Added DOB 18+ validation: calculates age from DOB, rejects if < 18
+  * Added selfie vs CNIC front auto-match using VLM (z-ai-web-dev-sdk createVision):
+    - Reads both images as base64
+    - Asks VLM: "Compare the face in selfie with face on CNIC. Same person? YES/NO"
+    - If YES → returns autoApproved: true
+    - If NO or VLM fails → returns autoApproved: false (manual review)
+  * Stores cnicNumber in KycProfile
+- KYC Step 3 API:
+  * Accepts `selfieMatched` boolean from frontend
+  * If selfieMatched=true → auto-approves KYC (status='approved', stage='loan_select') + sends "KYC Auto-Approved" notification
+  * If selfieMatched=false → normal flow (status='submitted', stage='kyc_pending') + sends "KYC Submitted" notification
+- KYC View (Step 1):
+  * Added CNIC Number input field with placeholder "35202-1234567-1"
+  * Client-side validation: CNIC must be 13 digits
+  * Client-side validation: age 18+ (calculates from DOB)
+  * DOB input max date set to 18 years ago (prevents selecting under-18 dates)
+  * Label shows "(must be 18+)" with red asterisk
+  * After step 1 submission, checks autoApproved response → sets selfieMatched state
+  * Toast: "Identity verified! Selfie matched CNIC ✅" if matched, else "Identity details saved"
+- KYC View (Step 3):
+  * If selfieMatched → shows green "Identity Auto-Verified ✅" banner
+  * If not matched → shows amber "Manual Review Required" banner
+  * Submit button: "KYC auto-approved!" toast if matched, else "KYC submitted for verification!"
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- agent-browser E2E:
+  * Login existing phone + wrong password → stays on Login (no redirect) ✓
+  * Signup existing phone → redirects to Login with phone pre-filled ✓
+  * API returns correct error messages ✓
+- Dev log: no errors
+
+Stage Summary:
+- Login no longer redirects existing users to signup on wrong password
+- KYC now validates: CNIC number (13 digits), DOB (18+), phone format
+- Selfie vs CNIC auto-match using VLM: auto-approves KYC if faces match, else waits for admin
+- Users see clear feedback on step 3 whether they'll be auto-approved or need manual review
+- Lint clean, no runtime errors
