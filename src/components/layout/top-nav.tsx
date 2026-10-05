@@ -26,6 +26,7 @@ import {
   Settings,
   ChevronRight,
   BadgeCheck,
+  ReceiptText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -188,8 +189,9 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
                 onClick={() => go(item.view)}
               />
             ))}
+            <DrawerItem icon={ReceiptText} label="Transactions" active={activeView === 'transactions'} onClick={() => { onNavigate?.('transactions'); setOpen(false) }} />
             {/* Help & Support */}
-            <DrawerItem icon={HelpCircle} label="Help & Support" onClick={() => { onNavigate?.('help'); setOpen(false) }} />
+            <DrawerItem icon={HelpCircle} label="Help & Support" active={activeView === 'help'} onClick={() => { onNavigate?.('help'); setOpen(false) }} />
             {/* Settings (non-functional placeholder) */}
             <DrawerItem icon={Settings} label="Settings" onClick={() => setOpen(false)} />
             <Separator className="my-2" />

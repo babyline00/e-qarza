@@ -15,6 +15,7 @@ import { ProfileView } from '@/components/views/profile-view'
 import { MyLoansView } from '@/components/views/my-loans-view'
 import { NotificationsView } from '@/components/views/notifications-view'
 import { HelpView } from '@/components/views/help-view'
+import { TransactionsView } from '@/components/views/transactions-view'
 import { AdminView } from '@/components/views/admin-view'
 import { DashboardSkeleton } from '@/components/shared/dashboard-skeleton'
 import { TopNav } from '@/components/layout/top-nav'
@@ -154,6 +155,9 @@ export function AppShell() {
       break
     case 'help':
       content = <HelpView />
+      break
+    case 'transactions':
+      content = <TransactionsView />
       break
     default:
       content = <DashboardView onNavigate={setView} onRefresh={refresh} />

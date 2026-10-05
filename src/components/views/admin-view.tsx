@@ -8,12 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/shared/page-header'
 import { AdminManageTab } from './admin-manage-tab'
 import { AdminUsersTab } from './admin-users-tab'
+import { AdminAnalyticsTab } from './admin-analytics-tab'
 import { api } from '@/lib/api-client'
 import { fmtPKR, fmtDateTime } from '@/lib/format'
 import { toast } from 'sonner'
 import {
   ShieldCheck, Banknote, Check, X, Loader2, Inbox, User as UserIcon, FileImage,
-  RefreshCw, Settings, Users,
+  RefreshCw, Settings, Users, BarChart3,
 } from 'lucide-react'
 
 interface KycItem {
@@ -113,8 +114,14 @@ export function AdminView() {
         </Button>
       </PageHeader>
 
-      <Tabs defaultValue="kyc" className="mt-6">
-        <TabsList className="rounded-xl bg-muted p-1">
+      <Tabs defaultValue="analytics" className="mt-6">
+        <TabsList className="rounded-xl bg-muted p-1 flex-wrap h-auto">
+          <TabsTrigger
+            value="analytics"
+            className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+          >
+            <BarChart3 className="size-4" /> Analytics
+          </TabsTrigger>
           <TabsTrigger
             value="kyc"
             className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
@@ -146,6 +153,11 @@ export function AdminView() {
             <Users className="size-4" /> Users
           </TabsTrigger>
         </TabsList>
+
+        {/* Analytics */}
+        <TabsContent value="analytics" className="mt-4">
+          <AdminAnalyticsTab />
+        </TabsContent>
 
         {/* KYC review */}
         <TabsContent value="kyc" className="space-y-4 mt-4">

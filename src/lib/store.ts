@@ -15,6 +15,7 @@ export type View =
   | 'my_loans'
   | 'notifications'
   | 'help'
+  | 'transactions'
 
 export interface KycData {
   status: string

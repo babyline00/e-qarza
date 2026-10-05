@@ -38,7 +38,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <Toaster />
-          <SonnerToaster richColors position="top-center" />
+          <SonnerToaster richColors position="bottom-center" style={{ zIndex: 100 }} />
         </ThemeProvider>
       </body>
     </html>

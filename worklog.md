@@ -340,3 +340,68 @@ Unresolved / next-phase recommendations:
 - WebSocket real-time notifications (currently polled every 12s)
 - Loan application rejection flow (admin can reject applications with reason)
 - Transaction history page (all payments across all loans in one view)
+
+---
+Task ID: S3-1 to S3-7 (webDevReview cron round 3)
+Agent: main
+Task: QA, add admin analytics dashboard, transaction history page, user profile edit, styling polish (focus rings, shimmer, toast position)
+
+Work Log:
+- QA via agent-browser + VLM: dashboard (toast overlapping nav bar — fixed), my-loans (NO BUGS)
+- Bug fix: toast notifications overlapped the sticky top nav (z-40). Changed SonnerToaster position from top-center to bottom-center + added zIndex:100 so toasts no longer collide with the header
+- Feature: admin analytics dashboard
+  * New API `GET /api/admin/stats` — aggregates: total/active users, KYC pending/approved counts, application/active/completed loan counts, pending payments, total disbursed + collected sums, disbursement by plan (bar), 6-month applications+disbursement trend (line), payment status breakdown (pie)
+  * New `admin-analytics-tab.tsx` with recharts: 4 KPI cards (Users/KYC/Loans/Pending), 2 hero summary cards (orange Total Disbursed + green Total Collected), 6-month dual-axis line chart (apps left / disbursed right), disbursement-by-plan bar chart, payment-status donut pie chart, skeleton loading state, 20s auto-refresh
+  * Added "Analytics" tab as the new DEFAULT (first) admin tab with BarChart3 icon; tabs list now flex-wraps to handle 5 tabs on mobile
+  * Verified: shows Rs 25,000 disbursed, Rs 5,458 collected, charts render with data (VLM 9/10)
+- Feature: transaction history page
+  * Added 'transactions' to View type in store
+  * New API `GET /api/transactions` — returns all user payments (processing fees + installments) newest-first with plan name + installment number
+  * New `transactions-view.tsx` — 4 summary cards (Total Payments/Approved/Pending/Total Paid with orange gradient), filter pills (All/Approved/Pending/Rejected) with live counts, transaction list with colored status icons + plan/date/ref + amount + receipt download button, hover-lift, empty state, skeleton loading
+  * Wired 'Transactions' drawer item (ReceiptText icon) + active-state highlight
+  * Wired TransactionsView into AppShell router
+  * Verified: 2 transactions shown (Installment #1 Approved + Processing Fee), filter "Pending" shows empty state, receipt download works (VLM 10/10)
+- Feature: user profile edit (non-identity fields)
+  * New API `POST /api/kyc/update` — allows updating phone/address/city/occupation/monthlyIncome after KYC approval; identity fields (cnicName/fatherName/dob) remain locked; validates phone format + income; syncs phone to User table; creates notification
+  * New `profile-edit-card.tsx` — read mode showing editable fields + "Identity locked" badge + "Edit Details" button; edit mode with phone/address/city-select/occupation/income fields + Save/Cancel
+  * Embedded in profile view between reference card and change-password card
+  * Verified: changed occupation to "Senior Software Engineer" → saved → "Profile updated" toast (VLM 10/10)
+- Styling polish
+  * Bug fix: moved SonnerToaster to bottom-center + zIndex:100 (no more header overlap)
+  * New CSS: `.shimmer` keyframe for skeleton loaders, `*:focus-visible` orange outline ring (2px) for accessible keyboard navigation, `.scrollbar-thin` Firefox scrollbar-width
+  * Admin tabs now flex-wrap on mobile (5 tabs handled gracefully)
+  * Applied hover-lift to transaction cards + analytics cards
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Admin Analytics tab (default): KPI cards + summary cards + 3 charts render with data (VLM 9/10)
+  * User Transactions page: drawer link → 4 summary cards + filter pills + transaction list + receipt download (VLM 10/10); Pending filter shows empty state
+  * Profile Edit: "Edit Details" → form with pre-filled fields → save → "Profile updated" (VLM 10/10)
+  * Toast no longer overlaps nav bar (moved to bottom-center)
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 3 new features added and verified: admin analytics dashboard (4 KPI cards + 2 summary cards + 3 recharts), transaction history page with filters + receipts, user profile edit for non-identity fields
+- 1 bug fixed (toast/header overlap)
+- Styling polish: focus-visible rings, skeleton shimmer, admin tab wrapping, toast repositioning
+- All features respect orange E-Qarza design system
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has admin analytics, full transaction history, editable profiles, plus all prior features (KYC/payment approval, plan/bank CRUD, user management, settlement calculator, loan agreement, help center, receipts, repayment chart, change password)
+- Admin dashboard now opens to analytics overview (charts of platform health), then KYC/Payments/Manage/Users tabs
+- Users can now view their full payment history, filter by status, download receipts, and edit their contact details
+
+Unresolved / next-phase recommendations:
+- Email/SMS notification simulation (still in-app only)
+- Rate limiting on auth endpoints (signup/login) to prevent brute force
+- WebSocket real-time notifications (currently polled every 12s)
+- Automated overdue reminder notifications (cron job — currently lazy on data load)
+- Unit tests for loan math, settlement calc, overdue sync, analytics aggregation
+- Admin reject loan application flow with reason (admin can reject payments but not applications directly)
+- Dark mode polish (variables exist but untested in dark)
+- User profile photo upload (avatar currently shows initials only)
+- Loan application status timeline (visual history of each application's stages)
+- Admin: export users/payments/analytics to CSV
+- Multi-language support (Urdu locale)
