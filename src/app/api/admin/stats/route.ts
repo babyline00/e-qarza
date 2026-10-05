@@ -91,6 +91,31 @@ export async function GET() {
     })
   )
 
+  // recent activity: last 8 new users + last 8 applications
+  const [recentUsers, recentApps, overdueInstallments, newUsersThisMonth] = await Promise.all([
+    db.user.findMany({
+      where: { role: 'user' },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, name: true, email: true, createdAt: true, stage: true },
+    }),
+    db.loanApplication.findMany({
+      orderBy: { appliedAt: 'desc' },
+      take: 5,
+      include: {
+        user: { select: { name: true, email: true } },
+        plan: { select: { name: true } },
+      },
+    }),
+    db.installment.count({ where: { status: 'overdue' } }),
+    db.user.count({
+      where: {
+        role: 'user',
+        createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), 1) },
+      },
+    }),
+  ])
+
   return NextResponse.json({
     stats: {
       totals: {
@@ -104,11 +129,28 @@ export async function GET() {
         pendingPayments,
         totalDisbursed: totalDisbursed._sum.amount || 0,
         totalCollected: totalCollected._sum.amount || 0,
+        overdueInstallments,
+        newUsersThisMonth,
       },
       byPlan,
       monthlyTrend: months,
       paymentStatus: { approved, submitted, rejected },
       repaymentByPlan,
+      recentUsers: recentUsers.map((u) => ({
+        id: u.id,
+        name: u.name || u.email,
+        email: u.email,
+        stage: u.stage,
+        createdAt: u.createdAt.toISOString(),
+      })),
+      recentApplications: recentApps.map((a) => ({
+        id: a.id,
+        userName: a.user.name || a.user.email,
+        planName: a.plan.name,
+        amount: a.amount,
+        status: a.status,
+        appliedAt: a.appliedAt.toISOString(),
+      })),
     },
   })
 }

@@ -53,6 +53,7 @@ export function AdminView() {
   const [kycs, setKycs] = useState<KycItem[]>([])
   const [payments, setPayments] = useState<PaymentItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('analytics')
   const [acting, setActing] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -115,7 +116,7 @@ export function AdminView() {
         </Button>
       </PageHeader>
 
-      <Tabs defaultValue="analytics" className="mt-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
         <TabsList className="rounded-xl bg-muted p-1 flex-wrap h-auto">
           <TabsTrigger
             value="analytics"
@@ -163,7 +164,7 @@ export function AdminView() {
 
         {/* Analytics */}
         <TabsContent value="analytics" className="mt-4">
-          <AdminAnalyticsTab />
+          <AdminAnalyticsTab onNavigate={setActiveTab} />
         </TabsContent>
 
         {/* KYC review */}
