@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -106,57 +106,79 @@ export function AdminView() {
         description="Review and approve KYC applications and payment proofs."
         icon={ShieldCheck}
       >
-        <Button size="sm" variant="outline" onClick={load} disabled={loading}>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading} className="gap-2">
           <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </PageHeader>
 
       <Tabs defaultValue="kyc" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="kyc" className="gap-2">
+        <TabsList className="rounded-xl bg-muted p-1">
+          <TabsTrigger
+            value="kyc"
+            className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+          >
             <ShieldCheck className="size-4" /> KYC
-            {kycs.length > 0 && <Badge variant="secondary" className="ml-1">{kycs.length}</Badge>}
+            {kycs.length > 0 && (
+              <Badge className="ml-1 h-5 border-0 bg-primary text-primary-foreground text-[10px]">{kycs.length}</Badge>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="payments" className="gap-2">
+          <TabsTrigger
+            value="payments"
+            className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+          >
             <Banknote className="size-4" /> Payments
-            {payments.length > 0 && <Badge variant="secondary" className="ml-1">{payments.length}</Badge>}
+            {payments.length > 0 && (
+              <Badge className="ml-1 h-5 border-0 bg-primary text-primary-foreground text-[10px]">{payments.length}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
 
         {/* KYC review */}
         <TabsContent value="kyc" className="space-y-4 mt-4">
           {kycs.length === 0 ? (
-            <Card className="border-dashed">
+            <Card className="rounded-2xl border-dashed">
               <CardContent className="py-12 text-center">
-                <Inbox className="size-10 text-muted-foreground mx-auto mb-3" />
-                <p className="font-medium">No pending KYCs</p>
-                <p className="text-sm text-muted-foreground mt-1">Submitted KYC applications will appear here.</p>
+                <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <Inbox className="size-7" />
+                </span>
+                <p className="font-semibold">No pending KYCs</p>
+                <p className="mt-1 text-sm text-muted-foreground">Submitted KYC applications will appear here.</p>
               </CardContent>
             </Card>
           ) : (
             kycs.map((k) => (
-              <Card key={k.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
+              <Card key={k.id} className="overflow-hidden rounded-2xl shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/30 px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 place-items-center rounded-xl bg-brand-gradient text-white">
+                      <UserIcon className="size-5" />
+                    </span>
                     <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <UserIcon className="size-4" /> {k.cnicName || '—'}
-                      </CardTitle>
-                      <CardDescription>{k.user.email} • Submitted {k.submittedAt ? fmtDateTime(k.submittedAt) : '—'}</CardDescription>
+                      <p className="text-base font-bold">{k.cnicName || '—'}</p>
+                      <p className="text-xs text-muted-foreground">{k.user.email} • Submitted {k.submittedAt ? fmtDateTime(k.submittedAt) : '—'}</p>
                     </div>
-                    <Badge variant="outline">Pending Review</Badge>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                    <div><p className="text-xs text-muted-foreground">Father/Husband</p><p className="font-medium">{k.fatherName || '—'}</p></div>
-                    <div><p className="text-xs text-muted-foreground">DOB</p><p className="font-medium">{k.dob || '—'}</p></div>
-                    <div><p className="text-xs text-muted-foreground">Phone</p><p className="font-medium">{k.phoneNumber || '—'}</p></div>
-                    <div><p className="text-xs text-muted-foreground">City</p><p className="font-medium">{k.city || '—'}</p></div>
-                    <div><p className="text-xs text-muted-foreground">Occupation</p><p className="font-medium">{k.occupation || '—'}</p></div>
+                  <Badge variant="outline" className="rounded-full border-amber-400/40 text-amber-700 bg-amber-50">Pending Review</Badge>
+                </div>
+                <CardContent className="space-y-4 p-5">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {[
+                      { l: 'Father / Husband', v: k.fatherName },
+                      { l: 'DOB', v: k.dob },
+                      { l: 'Phone', v: k.phoneNumber },
+                      { l: 'City', v: k.city },
+                      { l: 'Occupation', v: k.occupation },
+                    ].map((r) => (
+                      <div key={r.l} className="rounded-xl bg-muted/40 p-3">
+                        <p className="text-xs text-muted-foreground">{r.l}</p>
+                        <p className="mt-0.5 text-sm font-medium">{r.v || '—'}</p>
+                      </div>
+                    ))}
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1"><FileImage className="size-3" /> Documents</p>
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                      <FileImage className="size-3.5 text-primary" /> Documents
+                    </p>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { label: 'CNIC Front', path: k.cnicFrontPath },
@@ -168,24 +190,35 @@ export function AdminView() {
                           href={d.path || '#'}
                           target="_blank"
                           rel="noreferrer"
-                          className="block rounded-md border overflow-hidden hover:ring-2 ring-primary/40 transition"
+                          className="block overflow-hidden rounded-xl border transition hover:ring-2 hover:ring-primary/40"
                         >
                           {d.path ? (
                             <img src={d.path} alt={d.label} className="aspect-video w-full object-cover" />
                           ) : (
-                            <div className="aspect-video grid place-items-center text-xs text-muted-foreground">Missing</div>
+                            <div className="grid aspect-video place-items-center text-xs text-muted-foreground">Missing</div>
                           )}
-                          <p className="text-xs text-center py-1 border-t bg-muted/30">{d.label}</p>
+                          <p className="border-t bg-muted/30 py-1 text-center text-xs">{d.label}</p>
                         </a>
                       ))}
                     </div>
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <Button size="sm" onClick={() => actKyc(k.id, 'approve')} disabled={acting === k.id}>
+                    <Button
+                      size="sm"
+                      onClick={() => actKyc(k.id, 'approve')}
+                      disabled={acting === k.id}
+                      className="gap-1.5 rounded-lg bg-success text-success-foreground hover:bg-success/90"
+                    >
                       {acting === k.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                       Approve
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => actKyc(k.id, 'reject')} disabled={acting === k.id}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => actKyc(k.id, 'reject')}
+                      disabled={acting === k.id}
+                      className="gap-1.5 rounded-lg"
+                    >
                       <X className="size-4" /> Reject
                     </Button>
                   </div>
@@ -198,50 +231,76 @@ export function AdminView() {
         {/* Payment review */}
         <TabsContent value="payments" className="space-y-4 mt-4">
           {payments.length === 0 ? (
-            <Card className="border-dashed">
+            <Card className="rounded-2xl border-dashed">
               <CardContent className="py-12 text-center">
-                <Inbox className="size-10 text-muted-foreground mx-auto mb-3" />
-                <p className="font-medium">No pending payments</p>
-                <p className="text-sm text-muted-foreground mt-1">Submitted payment proofs will appear here.</p>
+                <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <Inbox className="size-7" />
+                </span>
+                <p className="font-semibold">No pending payments</p>
+                <p className="mt-1 text-sm text-muted-foreground">Submitted payment proofs will appear here.</p>
               </CardContent>
             </Card>
           ) : (
             payments.map((p) => (
-              <Card key={p.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
+              <Card key={p.id} className="overflow-hidden rounded-2xl shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/30 px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-10 place-items-center rounded-xl bg-brand-gradient text-white">
+                      <Banknote className="size-5" />
+                    </span>
                     <div>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Banknote className="size-4" />
+                      <p className="text-base font-bold">
                         {p.type === 'processing_fee' ? 'Processing Fee' : `Installment #${p.installmentNumber}`}
-                      </CardTitle>
-                      <CardDescription>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
                         {p.userName || p.userEmail} • {p.planName ? `${p.planName} plan • ` : ''}{fmtDateTime(p.createdAt)}
-                      </CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">{fmtPKR(p.amount)}</p>
-                      <Badge variant="outline">Pending</Badge>
+                      </p>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><p className="text-xs text-muted-foreground">Transaction Ref</p><p className="font-mono text-xs">{p.txnRef || '—'}</p></div>
-                    <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium capitalize">{p.type.replace('_', ' ')}</p></div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{fmtPKR(p.amount)}</p>
+                    <Badge variant="outline" className="rounded-full border-amber-400/40 text-amber-700 bg-amber-50">Pending</Badge>
+                  </div>
+                </div>
+                <CardContent className="space-y-3 p-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground">Transaction Ref</p>
+                      <p className="mt-0.5 font-mono text-xs">{p.txnRef || '—'}</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground">Type</p>
+                      <p className="mt-0.5 text-sm font-medium capitalize">{p.type.replace('_', ' ')}</p>
+                    </div>
                   </div>
                   {p.proofPath && (
-                    <a href={p.proofPath} target="_blank" rel="noreferrer" className="block rounded-md border overflow-hidden hover:ring-2 ring-primary/40 transition">
+                    <a
+                      href={p.proofPath}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden rounded-xl border transition hover:ring-2 hover:ring-primary/40"
+                    >
                       <img src={p.proofPath} alt="Payment proof" className="max-h-64 w-full object-contain bg-muted/30" />
-                      <p className="text-xs text-center py-1.5 border-t bg-muted/30">Click to view full size</p>
+                      <p className="border-t bg-muted/30 py-1.5 text-center text-xs">Click to view full size</p>
                     </a>
                   )}
                   <div className="flex gap-2 pt-1">
-                    <Button size="sm" onClick={() => actPayment(p.id, 'approve')} disabled={acting === p.id}>
+                    <Button
+                      size="sm"
+                      onClick={() => actPayment(p.id, 'approve')}
+                      disabled={acting === p.id}
+                      className="gap-1.5 rounded-lg bg-success text-success-foreground hover:bg-success/90"
+                    >
                       {acting === p.id ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                       Approve
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => actPayment(p.id, 'reject')} disabled={acting === p.id}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => actPayment(p.id, 'reject')}
+                      disabled={acting === p.id}
+                      className="gap-1.5 rounded-lg"
+                    >
                       <X className="size-4" /> Reject
                     </Button>
                   </div>

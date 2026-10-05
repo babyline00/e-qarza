@@ -54,6 +54,15 @@ export interface AppData {
     status: string
     paidAt?: string | null
   }[]
+  feePayment?: {
+    id: string
+    type: string
+    amount: number
+    status: string
+    txnRef: string | null
+    proofPath: string | null
+    createdAt: string
+  } | null
 }
 
 export interface NotificationData {

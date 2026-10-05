@@ -5,18 +5,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Stepper } from '@/components/shared/stepper'
 import { FileUpload } from '@/components/shared/file-upload'
-import { PageHeader } from '@/components/shared/page-header'
+import { KycHeader } from '@/components/shared/kyc-header'
+import { InfoBox } from '@/components/shared/info-box'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { useAppStore } from '@/lib/store'
 import {
-  Loader2, ArrowRight, ArrowLeft, UserRound, Briefcase, Users, AlertCircle, ShieldCheck,
+  Loader2, ArrowRight, ArrowLeft, AlertCircle, ShieldCheck,
 } from 'lucide-react'
 
 interface Props {
@@ -30,7 +29,7 @@ const PAKISTANI_CITIES = [
 ]
 
 export function KycView({ onDone }: Props) {
-  const { kyc } = useAppStore()
+  const { kyc, logout } = useAppStore()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const wasRejected = kyc?.status === 'rejected'
@@ -58,8 +57,6 @@ export function KycView({ onDone }: Props) {
   const [referenceName, setReferenceName] = useState(kyc?.referenceName || '')
   const [referencePhone, setReferencePhone] = useState(kyc?.referencePhone || '')
   const [referenceRelation, setReferenceRelation] = useState(kyc?.referenceRelation || '')
-
-  const steps = ['Identity', 'Financial', 'References']
 
   async function submitStep1() {
     if (!cnicName || !fatherName || !dob || !phoneNumber) {
@@ -132,84 +129,117 @@ export function KycView({ onDone }: Props) {
     }
   }
 
+  const headerTitles = [
+    { title: 'Basic Information', subtitle: 'Please enter details as per your CNIC' },
+    { title: 'Additional Information', subtitle: 'Help us know you better' },
+    { title: 'Reference Information', subtitle: 'Please provide a reference person' },
+  ]
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <PageHeader
-        title={wasRejected ? 'Update your KYC' : 'Complete your KYC'}
-        description="Verify your identity to unlock loan applications. Your information is encrypted and secure."
-        icon={ShieldCheck}
+    <div className="mx-auto min-h-screen max-w-3xl px-0 sm:px-4 sm:py-6">
+      <KycHeader
+        step={step}
+        total={3}
+        title={headerTitles[step].title}
+        subtitle={headerTitles[step].subtitle}
+        onBack={step === 0 ? logout : () => setStep(step - 1)}
       />
 
-      {wasRejected && kyc?.rejectReason && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertCircle className="size-4" />
-          <AlertTitle>Your previous KYC was rejected</AlertTitle>
-          <AlertDescription>{kyc.rejectReason}. Please update your details and resubmit.</AlertDescription>
-        </Alert>
-      )}
+      {/* Overlapping white card */}
+      <div className="-mt-4 rounded-t-3xl bg-background sm:rounded-3xl sm:shadow-lg sm:border sm:border-border/60">
+        <div className="p-5 sm:p-7">
+          {wasRejected && kyc?.rejectReason && (
+            <Alert variant="destructive" className="mb-5 rounded-lg">
+              <AlertCircle className="size-4" />
+              <AlertTitle>Your previous KYC was rejected</AlertTitle>
+              <AlertDescription>{kyc.rejectReason}. Please update your details and resubmit.</AlertDescription>
+            </Alert>
+          )}
 
-      <div className="mt-6 mb-8">
-        <Stepper steps={steps} current={step} />
-      </div>
+          {/* Section title */}
+          <div className="mb-5">
+            <h2 className="text-lg font-bold tracking-tight text-foreground">{headerTitles[step].title}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{headerTitles[step].subtitle}</p>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            {step === 0 && <><UserRound className="size-5" /> Identity & Documents</>}
-            {step === 1 && <><Briefcase className="size-5" /> Financial & Employment</>}
-            {step === 2 && <><Users className="size-5" /> Personal References</>}
-          </CardTitle>
-          <CardDescription>
-            {step === 0 && 'Enter the exact name printed on your CNIC and upload clear photos.'}
-            {step === 1 && 'Tell us about your work and income so we can assess your loan eligibility.'}
-            {step === 2 && 'Provide a reference we can contact if needed.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
           {/* STEP 1 */}
           {step === 0 && (
-            <>
+            <div className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="cnicName">Name (as on CNIC)</Label>
-                  <Input id="cnicName" value={cnicName} onChange={(e) => setCnicName(e.target.value)} placeholder="Muhammad Ahmed Khan" />
+                  <Label htmlFor="cnicName" className="text-sm font-medium">Name (as per CNIC)</Label>
+                  <Input
+                    id="cnicName"
+                    className="rounded-lg"
+                    value={cnicName}
+                    onChange={(e) => setCnicName(e.target.value)}
+                    placeholder="Muhammad Ahmed Khan"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="fatherName">Father / Husband Name</Label>
-                  <Input id="fatherName" value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Abdul Khan" />
+                  <Label htmlFor="fatherName" className="text-sm font-medium">Father&apos;s Name</Label>
+                  <Input
+                    id="fatherName"
+                    className="rounded-lg"
+                    value={fatherName}
+                    onChange={(e) => setFatherName(e.target.value)}
+                    placeholder="Abdul Khan"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="dob">Date of Birth</Label>
-                  <Input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} max={new Date().toISOString().slice(0, 10)} />
+                  <Label htmlFor="dob" className="text-sm font-medium">Date of Birth</Label>
+                  <Input
+                    id="dob"
+                    type="date"
+                    className="rounded-lg"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    max={new Date().toISOString().slice(0, 10)}
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="03001234567" inputMode="numeric" maxLength={11} />
+                  <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    className="rounded-lg"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="03001234567"
+                    inputMode="numeric"
+                    maxLength={11}
+                  />
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3 pt-2">
-                <FileUpload label="CNIC Front" hint="Front side photo" onChange={setCnicFront} value={cnicFront} />
-                <FileUpload label="CNIC Back" hint="Back side photo" onChange={setCnicBack} value={cnicBack} />
-                <FileUpload label="Selfie" hint="Clear face photo" onChange={setSelfie} value={selfie} />
+              <div className="pt-1">
+                <h3 className="text-sm font-semibold text-foreground mb-3">CNIC Images</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <FileUpload label="CNIC Front" hint="Front side" onChange={setCnicFront} value={cnicFront} compact />
+                  <FileUpload label="CNIC Back" hint="Back side" onChange={setCnicBack} value={cnicBack} compact />
+                </div>
+                <div className="mt-3">
+                  <FileUpload label="Selfie" hint="Clear face photo" onChange={setSelfie} value={selfie} compact />
+                </div>
               </div>
 
-              <div className="flex justify-end pt-2">
-                <Button onClick={submitStep1} disabled={loading}>
-                  {loading ? <Loader2 className="size-4 animate-spin" /> : <>Continue <ArrowRight className="size-4" /></>}
-                </Button>
-              </div>
-            </>
+              <Button
+                onClick={submitStep1}
+                disabled={loading}
+                className="w-full rounded-lg bg-brand-gradient text-white font-semibold hover:opacity-90"
+              >
+                {loading ? <Loader2 className="size-4 animate-spin" /> : <>Next <ArrowRight className="size-4" /></>}
+              </Button>
+            </div>
           )}
 
           {/* STEP 2 */}
           {step === 1 && (
-            <>
+            <div className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Education</Label>
+                  <Label className="text-sm font-medium">Education</Label>
                   <Select value={education} onValueChange={setEducation}>
-                    <SelectTrigger><SelectValue placeholder="Select education" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select education" /></SelectTrigger>
                     <SelectContent>
                       {['Matriculation', 'Intermediate', 'Bachelor\'s', 'Master\'s', 'MPhil / PhD', 'Other'].map((e) => (
                         <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -218,9 +248,9 @@ export function KycView({ onDone }: Props) {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Marital Status</Label>
+                  <Label className="text-sm font-medium">Marital Status</Label>
                   <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                    <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select status" /></SelectTrigger>
                     <SelectContent>
                       {['Single', 'Married', 'Divorced', 'Widowed'].map((m) => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
@@ -228,21 +258,31 @@ export function KycView({ onDone }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Gender</Label>
+                <RadioGroup value={gender} onValueChange={setGender} className="flex flex-wrap gap-2 pt-1">
+                  {['Male', 'Female', 'Other'].map((g) => (
+                    <Label
+                      key={g}
+                      htmlFor={`g-${g}`}
+                      className="cursor-pointer"
+                    >
+                      <RadioGroupItem id={`g-${g}`} value={g} className="peer sr-only" />
+                      <span className="inline-flex min-w-20 items-center justify-center rounded-full border border-input bg-background px-4 py-2 text-sm font-medium transition-colors peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary">
+                        {g}
+                      </span>
+                    </Label>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Gender</Label>
-                  <RadioGroup value={gender} onValueChange={setGender} className="flex gap-4 pt-2">
-                    {['Male', 'Female', 'Other'].map((g) => (
-                      <div key={g} className="flex items-center gap-2">
-                        <RadioGroupItem id={`g-${g}`} value={g} />
-                        <Label htmlFor={`g-${g}`} className="font-normal cursor-pointer">{g}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>City</Label>
+                  <Label className="text-sm font-medium">City</Label>
                   <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select city" /></SelectTrigger>
                     <SelectContent className="max-h-72">
                       {PAKISTANI_CITIES.map((c) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -250,18 +290,35 @@ export function KycView({ onDone }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="address">Residential Address</Label>
-                  <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House #, Street, Area, Town" rows={2} />
-                </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="occupation">Occupation</Label>
-                  <Input id="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder="e.g. Teacher, Driver, Shopkeeper" />
+                  <Label className="text-sm font-medium">Occupation</Label>
+                  <Input
+                    id="occupation"
+                    className="rounded-lg"
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    placeholder="e.g. Teacher, Driver"
+                  />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="address" className="text-sm font-medium">Residential Address</Label>
+                <Textarea
+                  id="address"
+                  className="rounded-lg"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="House #, Street, Area, Town"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Employment Type</Label>
+                  <Label className="text-sm font-medium">Employment Status</Label>
                   <Select value={employment} onValueChange={setEmployment}>
-                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       {['Employed', 'Self-employed', 'Business', 'Student', 'Unemployed'].map((e) => (
                         <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -269,46 +326,75 @@ export function KycView({ onDone }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="income">Monthly Income (Rs)</Label>
-                  <Input id="income" type="number" min={0} value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="e.g. 45000" inputMode="numeric" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="income" className="text-sm font-medium">Monthly Income (PKR)</Label>
+                  <Input
+                    id="income"
+                    type="number"
+                    min={0}
+                    className="rounded-lg"
+                    value={monthlyIncome}
+                    onChange={(e) => setMonthlyIncome(e.target.value)}
+                    placeholder="e.g. 45000"
+                    inputMode="numeric"
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-between pt-2">
-                <Button variant="outline" onClick={() => setStep(0)} disabled={loading}>
+              <div className="flex gap-3 pt-1">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(0)}
+                  disabled={loading}
+                  className="flex-1 rounded-lg"
+                >
                   <ArrowLeft className="size-4" /> Back
                 </Button>
-                <Button onClick={submitStep2} disabled={loading}>
-                  {loading ? <Loader2 className="size-4 animate-spin" /> : <>Continue <ArrowRight className="size-4" /></>}
+                <Button
+                  onClick={submitStep2}
+                  disabled={loading}
+                  className="flex-[2] rounded-lg bg-brand-gradient text-white font-semibold hover:opacity-90"
+                >
+                  {loading ? <Loader2 className="size-4 animate-spin" /> : <>Next <ArrowRight className="size-4" /></>}
                 </Button>
               </div>
-            </>
+            </div>
           )}
 
           {/* STEP 3 */}
           {step === 2 && (
-            <>
-              <Alert>
-                <Users className="size-4" />
-                <AlertTitle>Reference contact</AlertTitle>
-                <AlertDescription>
-                  Provide one person who knows you well. We only contact them if we cannot reach you.
-                </AlertDescription>
-              </Alert>
+            <div className="space-y-5">
+              <InfoBox>
+                Provide one person who knows you well. We only contact them if we cannot reach you.
+              </InfoBox>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="refName">Reference Name</Label>
-                  <Input id="refName" value={referenceName} onChange={(e) => setReferenceName(e.target.value)} placeholder="e.g. Bilal Ahmed" />
+                  <Label htmlFor="refName" className="text-sm font-medium">Reference Name</Label>
+                  <Input
+                    id="refName"
+                    className="rounded-lg"
+                    value={referenceName}
+                    onChange={(e) => setReferenceName(e.target.value)}
+                    placeholder="e.g. Bilal Ahmed"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="refPhone">Reference Phone</Label>
-                  <Input id="refPhone" value={referencePhone} onChange={(e) => setReferencePhone(e.target.value)} placeholder="03001234567" inputMode="numeric" maxLength={11} />
+                  <Label htmlFor="refPhone" className="text-sm font-medium">Reference Phone</Label>
+                  <Input
+                    id="refPhone"
+                    className="rounded-lg"
+                    value={referencePhone}
+                    onChange={(e) => setReferencePhone(e.target.value)}
+                    placeholder="03001234567"
+                    inputMode="numeric"
+                    maxLength={11}
+                  />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="refRel">Relationship</Label>
+                  <Label className="text-sm font-medium">Relation</Label>
                   <Select value={referenceRelation} onValueChange={setReferenceRelation}>
-                    <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select relationship" /></SelectTrigger>
                     <SelectContent>
                       {['Father', 'Mother', 'Brother', 'Sister', 'Spouse', 'Friend', 'Colleague', 'Relative', 'Other'].map((r) => (
                         <SelectItem key={r} value={r}>{r}</SelectItem>
@@ -317,18 +403,28 @@ export function KycView({ onDone }: Props) {
                   </Select>
                 </div>
               </div>
-              <div className="flex justify-between pt-2">
-                <Button variant="outline" onClick={() => setStep(1)} disabled={loading}>
+
+              <div className="flex gap-3 pt-1">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  disabled={loading}
+                  className="flex-1 rounded-lg"
+                >
                   <ArrowLeft className="size-4" /> Back
                 </Button>
-                <Button onClick={submitStep3} disabled={loading}>
-                  {loading ? <Loader2 className="size-4 animate-spin" /> : <>Submit for Verification <ShieldCheck className="size-4" /></>}
+                <Button
+                  onClick={submitStep3}
+                  disabled={loading}
+                  className="flex-[2] rounded-lg bg-brand-gradient text-white font-semibold hover:opacity-90"
+                >
+                  {loading ? <Loader2 className="size-4 animate-spin" /> : <><ShieldCheck className="size-4" /> Submit for Verification</>}
                 </Button>
               </div>
-            </>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

@@ -2,18 +2,18 @@
 
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { PageHeader } from '@/components/shared/page-header'
+import { Card, CardContent } from '@/components/ui/card'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { fmtPKR, loanTotals } from '@/lib/format'
-import { Wallet, Loader2, CheckCircle2, TrendingUp, CalendarDays, Percent, Sparkles } from 'lucide-react'
+import { Wallet, Loader2, Check, ChevronRight, Coins } from 'lucide-react'
+import { InfoBox } from '@/components/shared/info-box'
 
 interface Props {
   onApplied: () => void
 }
+
+const HERO_BULLETS = ['0% Markup', 'Quick Approval', 'Flexible Installments']
 
 export function LoanSelectView({ onApplied }: Props) {
   const { plans } = useAppStore()
@@ -33,86 +33,101 @@ export function LoanSelectView({ onApplied }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader
-        title="Choose a Loan Plan"
-        description="Pick the plan that fits your needs. You can apply for one active loan at a time."
-        icon={Wallet}
-      />
+    <div className="mx-auto max-w-2xl px-4 py-6 space-y-5">
+      {/* Orange gradient hero */}
+      <div className="relative overflow-hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-lg">
+        <Coins
+          className="pointer-events-none absolute right-2 top-2 size-28 text-white/20"
+          strokeWidth={1.5}
+        />
+        <Coins
+          className="pointer-events-none absolute bottom-1 right-12 size-14 text-white/10"
+          strokeWidth={1.5}
+        />
+        <div className="relative">
+          <h1 className="text-xl font-bold leading-snug pr-4">Get Instant Loan For Your Needs</h1>
+          <ul className="mt-4 space-y-2.5">
+            {HERO_BULLETS.map((b) => (
+              <li key={b} className="flex items-center gap-3">
+                <span className="grid size-6 place-items-center rounded-full bg-white shadow-sm">
+                  <Check className="size-3.5 text-primary" strokeWidth={3} />
+                </span>
+                <span className="text-sm font-medium">{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Section title */}
+      <div className="px-1">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Select a Loan Plan
+        </h2>
+      </div>
+
+      {/* Plan list (mobile-first vertical) */}
+      <div className="space-y-3">
         {plans.length === 0 && (
-          <Card className="sm:col-span-2 lg:col-span-4">
-            <CardContent className="py-12 text-center text-muted-foreground">
+          <Card className="rounded-2xl">
+            <CardContent className="py-10 text-center text-muted-foreground">
               No loan plans available right now. Please check back later.
             </CardContent>
           </Card>
         )}
-        {plans.map((plan, idx) => {
+
+        {plans.map((plan) => {
           const t = loanTotals(plan.amount, plan.interestRate, plan.tenureMonths)
-          const featured = idx === 1
+          const isLoading = applying === plan.id
+          const disabled = applying !== null
           return (
-            <Card key={plan.id} className={`relative flex flex-col ${featured ? 'border-primary shadow-lg ring-1 ring-primary/20' : ''}`}>
-              {featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="gap-1"><Sparkles className="size-3" /> Most Popular</Badge>
-                </div>
-              )}
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
-                  {plan.name}
-                </CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 space-y-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Loan amount</p>
-                  <p className="text-2xl font-bold">{fmtPKR(plan.amount)}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-md bg-muted/50 p-2">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1"><Percent className="size-3" /> Rate</p>
-                    <p className="font-semibold">{plan.interestRate}%</p>
-                  </div>
-                  <div className="rounded-md bg-muted/50 p-2">
-                    <p className="text-xs text-muted-foreground flex items-center gap-1"><CalendarDays className="size-3" /> Term</p>
-                    <p className="font-semibold">{plan.tenureMonths} mo</p>
-                  </div>
-                </div>
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Monthly installment</span><span className="font-semibold">{fmtPKR(t.monthlyInstallment)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Total interest</span><span className="font-semibold">{fmtPKR(t.totalInterest)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Total payable</span><span className="font-semibold">{fmtPKR(t.totalPayable)}</span></div>
-                  <div className="flex justify-between border-t pt-1 mt-1"><span className="text-muted-foreground">Processing fee</span><span className="font-semibold text-primary">{fmtPKR(plan.processingFee)}</span></div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  variant={featured ? 'default' : 'outline'}
-                  onClick={() => apply(plan.id)}
-                  disabled={applying !== null}
-                >
-                  {applying === plan.id ? (
-                    <Loader2 className="size-4 animate-spin" />
+            <Card
+              key={plan.id}
+              role="button"
+              tabIndex={0}
+              aria-disabled={disabled}
+              onClick={() => !disabled && apply(plan.id)}
+              onKeyDown={(e) => {
+                if (disabled) return
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  apply(plan.id)
+                }
+              }}
+              className={`rounded-2xl transition-all ${
+                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-md hover:border-primary/30'
+              } ${isLoading ? 'ring-2 ring-primary' : ''}`}
+            >
+              <CardContent className="flex items-center gap-3 p-4">
+                <span className="grid size-12 place-items-center rounded-xl bg-brand-gradient text-white shrink-0">
+                  {isLoading ? (
+                    <Loader2 className="size-5 animate-spin" />
                   ) : (
-                    <>Apply Now</>
+                    <Wallet className="size-5" />
                   )}
-                </Button>
-              </CardFooter>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg font-bold leading-tight">{fmtPKR(plan.amount)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {plan.tenureMonths} Months &middot; {plan.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Monthly &asymp; {fmtPKR(t.monthlyInstallment)}
+                  </p>
+                </div>
+                <ChevronRight className="size-5 text-muted-foreground shrink-0" />
+              </CardContent>
             </Card>
           )
         })}
       </div>
 
-      <div className="mt-6 rounded-lg border bg-muted/30 p-4 flex items-start gap-3">
-        <TrendingUp className="size-5 text-primary shrink-0 mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium text-foreground mb-0.5">How it works</p>
-          After selecting a plan, you will pay a small one-time processing fee to verify your bank account.
-          Once verified, your loan is activated and your first installment becomes due.
-        </div>
-      </div>
+      {/* How it works */}
+      <InfoBox>
+        <span className="font-medium">How it works &mdash; </span>
+        After selecting a plan, you pay a small one-time processing fee to verify your bank
+        account. Once verified, your loan is activated and your first installment becomes due.
+      </InfoBox>
     </div>
   )
 }

@@ -1,16 +1,19 @@
 'use client'
 
 import { useAppStore } from '@/lib/store'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { PageHeader } from '@/components/shared/page-header'
 import { fmtRupees, fmtDate } from '@/lib/format'
-import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Users, ShieldCheck, IdCard } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Users, IdCard, BadgeCheck } from 'lucide-react'
 
 export function ProfileView() {
   const { user, kyc } = useAppStore()
   if (!user) return null
+
+  const initials = (user.name || user.email).slice(0, 2).toUpperCase()
+  const isVerified = kyc?.status === 'approved'
 
   const rows: { icon: React.ElementType; label: string; value: string | null }[] = [
     { icon: Mail, label: 'Email', value: user.email },
@@ -38,26 +41,33 @@ export function ProfileView() {
     <div className="mx-auto max-w-3xl px-4 py-8">
       <PageHeader title="My Profile" description="Your account and verified KYC details." icon={User} />
 
-      <Card className="mt-6">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">{user.name || user.email}</CardTitle>
-              <CardDescription>{user.email}</CardDescription>
+      {/* Profile header card */}
+      <Card className="mt-6 overflow-hidden rounded-2xl shadow-sm">
+        <div className="bg-brand-gradient px-5 py-6 text-white">
+          <div className="flex items-center gap-4">
+            <div className="grid size-16 shrink-0 place-items-center rounded-full border-2 border-white/40 bg-white/20 text-xl font-bold">
+              {initials}
             </div>
-            <Badge variant={kyc?.status === 'approved' ? 'default' : 'secondary'} className="gap-1">
-              <ShieldCheck className="size-3" />
-              {kyc?.status === 'approved' ? 'Verified' : kyc?.status || 'Unverified'}
-            </Badge>
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-bold">{user.name || 'User'}</h2>
+              <p className="truncate text-sm text-white/85">{user.email}</p>
+              {isVerified && (
+                <Badge className="mt-1.5 gap-1 bg-success text-success-foreground border-0 hover:bg-success">
+                  <BadgeCheck className="size-3.5" /> Verified User
+                </Badge>
+              )}
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-1">
+        </div>
+        <CardContent className="p-0">
           {rows.map((r, i) => (
             <div key={i}>
-              <div className="flex items-start gap-3 py-2.5">
-                <r.icon className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                <span className="text-sm text-muted-foreground w-40 shrink-0">{r.label}</span>
-                <span className="text-sm font-medium text-right ml-auto">{r.value}</span>
+              <div className="flex items-center gap-3 px-5 py-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <r.icon className="size-4" />
+                </span>
+                <span className="w-32 shrink-0 text-xs text-muted-foreground sm:text-sm sm:w-40">{r.label}</span>
+                <span className="ml-auto text-right text-sm font-medium">{r.value}</span>
               </div>
               {i < rows.length - 1 && <Separator />}
             </div>
@@ -66,17 +76,22 @@ export function ProfileView() {
       </Card>
 
       {kyc?.referenceName && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2"><Users className="size-5" /> Reference Contact</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
+        <Card className="mt-4 overflow-hidden rounded-2xl shadow-sm">
+          <div className="flex items-center gap-2 border-b px-5 py-3">
+            <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Users className="size-4" />
+            </span>
+            <h3 className="text-sm font-bold">Reference Contact</h3>
+          </div>
+          <CardContent className="p-0">
             {refRows.map((r, i) => (
               <div key={i}>
-                <div className="flex items-start gap-3 py-2.5">
-                  <r.icon className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <span className="text-sm text-muted-foreground w-40 shrink-0">{r.label}</span>
-                  <span className="text-sm font-medium text-right ml-auto">{r.value}</span>
+                <div className="flex items-center gap-3 px-5 py-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <r.icon className="size-4" />
+                  </span>
+                  <span className="w-32 shrink-0 text-xs text-muted-foreground sm:text-sm sm:w-40">{r.label}</span>
+                  <span className="ml-auto text-right text-sm font-medium">{r.value}</span>
                 </div>
                 {i < refRows.length - 1 && <Separator />}
               </div>

@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LoanFast — Fast Digital Loans",
-  description: "Apply for instant digital loans with simple KYC. Quick approval, easy installments.",
-  keywords: ["loan", "microfinance", "Pakistan", "digital loan", "KYC", "instant loan"],
-  authors: [{ name: "LoanFast" }],
+  title: "E-Qarza — Digital Loans Made Easy",
+  description: "Apply for instant digital loans with simple KYC. Quick approval, flexible installments, 0% markup.",
+  keywords: ["E-Qarza", "loan", "microfinance", "Pakistan", "digital loan", "KYC", "qarza"],
+  authors: [{ name: "E-Qarza" }],
   icons: {
     icon: "/logo.svg",
   },

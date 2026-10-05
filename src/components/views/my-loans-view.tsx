@@ -2,15 +2,14 @@
 
 import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { PageHeader } from '@/components/shared/page-header'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
 import { fmtPKR, fmtDate, loanTotals, fmtDateTime } from '@/lib/format'
-import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt } from 'lucide-react'
+import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt, AlertCircle, Wallet } from 'lucide-react'
 
 interface Props {
   onRefresh?: () => void
@@ -24,11 +23,13 @@ export function MyLoansView({ onRefresh }: Props) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
         <PageHeader title="My Loans" description="Your loan applications and repayment history." icon={CreditCard} />
-        <Card className="mt-6 border-dashed">
+        <Card className="mt-6 rounded-2xl border-dashed">
           <CardContent className="py-12 text-center">
-            <CreditCard className="size-10 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium">No loans yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Your loan applications will appear here.</p>
+            <span className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <CreditCard className="size-7" />
+            </span>
+            <p className="font-semibold">No loans yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Your loan applications will appear here.</p>
           </CardContent>
         </Card>
       </div>
@@ -45,37 +46,55 @@ export function MyLoansView({ onRefresh }: Props) {
           const paidCount = installments.filter((i) => i.status === 'paid').length
           const progress = installments.length ? Math.round((paidCount / installments.length) * 100) : 0
           const totalPaid = installments.filter((i) => i.status === 'paid').reduce((s, i) => s + i.amount, 0)
+          const summary = [
+            { label: 'Loan', value: fmtPKR(app.amount) },
+            { label: 'Monthly', value: fmtPKR(t.monthlyInstallment) },
+            { label: 'Total payable', value: fmtPKR(t.totalPayable) },
+            { label: 'Processing fee', value: fmtPKR(app.processingFee) },
+          ]
           return (
-            <Card key={app.id}>
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+            <Card key={app.id} className="overflow-hidden rounded-2xl shadow-sm">
+              {/* Header */}
+              <div className="flex flex-wrap items-start justify-between gap-2 border-b px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-10 place-items-center rounded-xl bg-brand-gradient text-white">
+                    <Wallet className="size-5" />
+                  </span>
                   <div>
-                    <CardTitle className="text-lg flex items-center gap-2">{app.planName} Plan</CardTitle>
-                    <CardDescription>Applied {fmtDate(app.appliedAt)}</CardDescription>
+                    <h3 className="text-base font-bold">{app.planName} Plan</h3>
+                    <p className="text-xs text-muted-foreground">Applied {fmtDate(app.appliedAt)}</p>
                   </div>
-                  <StatusBadge status={app.status} />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                <StatusBadge status={app.status} />
+              </div>
+
+              <CardContent className="space-y-4 p-5">
                 {/* summary grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <div><p className="text-xs text-muted-foreground">Loan</p><p className="font-semibold">{fmtPKR(app.amount)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Monthly</p><p className="font-semibold">{fmtPKR(t.monthlyInstallment)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Total payable</p><p className="font-semibold">{fmtPKR(t.totalPayable)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Processing fee</p><p className="font-semibold">{fmtPKR(app.processingFee)}</p></div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {summary.map((s) => (
+                    <div key={s.label} className="rounded-xl bg-muted/40 p-3">
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                      <p className="mt-0.5 text-sm font-bold">{s.value}</p>
+                    </div>
+                  ))}
                 </div>
 
                 {app.status === 'rejected' && app.rejectReason && (
-                  <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
-                    <strong>Rejected:</strong> {app.rejectReason}
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                    <div>
+                      <strong>Rejected:</strong> {app.rejectReason}
+                    </div>
                   </div>
                 )}
 
                 {/* fee payment status */}
                 {app.feePayment && (
-                  <div className="rounded-md border p-3 text-sm">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium flex items-center gap-2"><Receipt className="size-4" /> Processing Fee</span>
+                  <div className="rounded-xl border p-3">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <Receipt className="size-4 text-primary" /> Processing Fee
+                      </span>
                       <Badge variant={app.feePayment.status === 'approved' ? 'default' : app.feePayment.status === 'rejected' ? 'destructive' : 'outline'}>
                         {app.feePayment.status}
                       </Badge>
@@ -84,45 +103,61 @@ export function MyLoansView({ onRefresh }: Props) {
                   </div>
                 )}
 
-                {/* progress + schedule for active loans */}
+                {/* progress + schedule for active/completed loans */}
                 {(app.status === 'active' || app.status === 'completed') && installments.length > 0 && (
                   <>
                     <div>
-                      <div className="flex justify-between text-sm mb-1.5">
+                      <div className="mb-1.5 flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Progress</span>
                         <span className="font-medium">{paidCount}/{installments.length} paid • {fmtPKR(totalPaid)}</span>
                       </div>
-                      <Progress value={progress} className="h-2" />
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-success transition-all"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
                     </div>
                     <Separator />
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium flex items-center gap-2"><CalendarClock className="size-4" /> Installments</p>
-                      <div className="space-y-1.5">
-                        {installments.map((i) => (
-                          <div key={i.id} className="flex items-center justify-between rounded-md border p-2.5 gap-2">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className={`grid size-8 place-items-center rounded-full text-xs font-semibold shrink-0 ${
-                                i.status === 'paid' ? 'bg-primary/10 text-primary' :
-                                i.status === 'verifying' ? 'bg-amber-100 text-amber-700' :
-                                i.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
-                              }`}>
-                                {i.status === 'paid' ? <CheckCircle2 className="size-4" /> : i.status === 'verifying' ? <Clock className="size-4" /> : i.number}
+                    <div>
+                      <p className="mb-2 flex items-center gap-2 text-sm font-medium">
+                        <CalendarClock className="size-4 text-primary" /> Installments
+                      </p>
+                      <div className="space-y-2">
+                        {installments.map((i) => {
+                          const circleClass =
+                            i.status === 'paid' ? 'bg-success/10 text-success' :
+                            i.status === 'verifying' ? 'bg-amber-100 text-amber-700' :
+                            i.status === 'overdue' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'
+                          const Icon = i.status === 'paid' ? CheckCircle2 : i.status === 'verifying' ? Clock : null
+                          return (
+                            <div key={i.id} className="flex items-center justify-between rounded-xl border p-2.5 gap-2">
+                              <div className="flex min-w-0 items-center gap-2.5">
+                                <span className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${circleClass}`}>
+                                  {Icon ? <Icon className="size-4" /> : i.number}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium">Installment #{i.number}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Due {fmtDate(i.dueDate)}{i.paidAt && ` • Paid ${fmtDate(i.paidAt)}`}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium">Installment #{i.number}</p>
-                                <p className="text-xs text-muted-foreground">Due {fmtDate(i.dueDate)}{i.paidAt && ` • Paid ${fmtDate(i.paidAt)}`}</p>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <span className="text-sm font-semibold">{fmtPKR(i.amount)}</span>
+                                {(i.status === 'pending' || i.status === 'overdue') && (
+                                  <Button size="sm" variant="outline" onClick={() => setPayInstallment(i)}>Pay</Button>
+                                )}
+                                {i.status === 'verifying' && (
+                                  <Badge variant="outline" className="gap-1"><Clock className="size-3" /> Verifying</Badge>
+                                )}
+                                {i.status === 'paid' && (
+                                  <Badge className="gap-1 bg-success text-success-foreground border-0 hover:bg-success"><CheckCircle2 className="size-3" /> Paid</Badge>
+                                )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-sm font-semibold">{fmtPKR(i.amount)}</span>
-                              {(i.status === 'pending' || i.status === 'overdue') && (
-                                <Button size="sm" variant="outline" onClick={() => setPayInstallment(i)}>Pay</Button>
-                              )}
-                              {i.status === 'verifying' && <Badge variant="outline" className="gap-1"><Clock className="size-3" /> Verifying</Badge>}
-                              {i.status === 'paid' && <Badge variant="secondary" className="gap-1"><CheckCircle2 className="size-3" /> Paid</Badge>}
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   </>
@@ -143,15 +178,15 @@ export function MyLoansView({ onRefresh }: Props) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-    fee_pending: { label: 'Fee Due', variant: 'outline' },
-    fee_submitted: { label: 'Fee Verifying', variant: 'outline' },
-    fee_approved: { label: 'Fee Approved', variant: 'secondary' },
-    fee_rejected: { label: 'Fee Rejected', variant: 'destructive' },
-    active: { label: 'Active', variant: 'default' },
-    completed: { label: 'Completed', variant: 'secondary' },
-    rejected: { label: 'Rejected', variant: 'destructive' },
+  const map: Record<string, { label: string; cls: string }> = {
+    fee_pending: { label: 'Fee Due', cls: 'border-primary/30 text-primary bg-primary/5' },
+    fee_submitted: { label: 'Fee Verifying', cls: 'border-amber-300/40 text-amber-700 bg-amber-50' },
+    fee_approved: { label: 'Fee Approved', cls: 'bg-muted text-muted-foreground' },
+    fee_rejected: { label: 'Fee Rejected', cls: 'bg-destructive text-destructive-foreground' },
+    active: { label: 'Active', cls: 'bg-success text-success-foreground' },
+    completed: { label: 'Completed', cls: 'bg-muted text-muted-foreground' },
+    rejected: { label: 'Rejected', cls: 'bg-destructive text-destructive-foreground' },
   }
-  const m = map[status] || { label: status, variant: 'secondary' as const }
-  return <Badge variant={m.variant}>{m.label}</Badge>
+  const m = map[status] || { label: status, cls: 'bg-muted text-muted-foreground' }
+  return <Badge className={`rounded-full border-0 ${m.cls}`}>{m.label}</Badge>
 }

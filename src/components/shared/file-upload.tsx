@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback } from 'react'
-import { UploadCloud, X, ImageIcon } from 'lucide-react'
+import { Camera, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface FileUploadProps {
@@ -10,9 +10,10 @@ interface FileUploadProps {
   onChange: (file: File | null) => void
   value?: File | null
   preview?: string
+  compact?: boolean
 }
 
-export function FileUpload({ label, hint, onChange, value, preview }: FileUploadProps) {
+export function FileUpload({ label, hint, onChange, value, preview, compact }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [drag, setDrag] = useState(false)
   const [localPreview, setLocalPreview] = useState<string | null>(null)
@@ -49,9 +50,10 @@ export function FileUpload({ label, hint, onChange, value, preview }: FileUpload
         }}
         onClick={() => inputRef.current?.click()}
         className={cn(
-          'relative cursor-pointer rounded-lg border-2 border-dashed p-4 transition-colors flex flex-col items-center justify-center text-center min-h-32',
-          drag ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50',
-          value && 'border-primary/40'
+          'relative cursor-pointer rounded-xl border-2 border-dashed transition-colors flex flex-col items-center justify-center text-center bg-muted/40 hover:bg-accent/60',
+          drag ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
+          value && 'border-primary/40',
+          compact ? 'min-h-28 p-3' : 'min-h-36 p-4'
         )}
       >
         <input
@@ -63,7 +65,7 @@ export function FileUpload({ label, hint, onChange, value, preview }: FileUpload
         />
         {shown ? (
           <div className="relative w-full">
-            <img src={shown} alt={label} className="mx-auto max-h-32 rounded-md object-contain" />
+            <img src={shown} alt={label} className={cn('mx-auto rounded-lg object-contain', compact ? 'max-h-24' : 'max-h-32')} />
             <button
               type="button"
               onClick={(e) => {
@@ -78,17 +80,14 @@ export function FileUpload({ label, hint, onChange, value, preview }: FileUpload
           </div>
         ) : (
           <>
-            <UploadCloud className="size-7 text-muted-foreground mb-2" />
-            <p className="text-sm font-medium">Click or drag to upload</p>
-            <p className="text-xs text-muted-foreground mt-1">{hint || 'JPG, PNG, WEBP — max 5MB'}</p>
+            <span className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary mb-2">
+              <Camera className="size-5" />
+            </span>
+            <p className="text-sm font-medium">Tap to upload</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{hint || 'JPG, PNG, WEBP — max 5MB'}</p>
           </>
         )}
       </div>
-      {value && (
-        <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-          <ImageIcon className="size-3" /> {value.name}
-        </p>
-      )}
     </div>
   )
 }
