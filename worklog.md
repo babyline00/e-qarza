@@ -1378,3 +1378,45 @@ Stage Summary:
 - Faster page loads via memory + sessionStorage caching (15s TTL for GET requests)
 - Clean auth page without test credentials
 - Lint clean, pushed to GitHub
+
+---
+Task ID: A1-A4 (App Download System)
+Agent: main
+Task: Admin upload app files (APK/IPA), show download buttons on login screen
+
+Work Log:
+- Schema: New AppDownload model (platform/version/fileName/filePath/fileSize/active) + db:push + db:generate
+- Admin API: `GET/POST/DELETE /api/admin/app-download`
+  * POST: multipart upload (platform, version, file) — 200MB max, deactivates previous active app for same platform
+  * DELETE: removes file + DB record
+  * GET: lists all app downloads
+  * Admin/staff access (settings tab)
+- Public API: `GET /api/app-download` — returns active apps only (no auth required)
+- Settings UI: App Download card
+  * Platform dropdown (Android APK / iOS IPA)
+  * Version input (e.g. 1.0.0)
+  * Upload button (orange gradient, with loading spinner)
+  * Existing apps list: platform icon (Smartphone/Apple), version, filename, file size, Active badge
+  * Download button (per app) + Delete button
+  * Empty state: "No app files uploaded yet"
+- Login screen: download buttons
+  * Fetches /api/app-download on mount
+  * Shows buttons ONLY when apps exist (hidden when empty)
+  * Android: Smartphone icon + "Android" + version + Download icon
+  * iOS: Apple icon + "iOS" + version + Download icon
+  * Download link uses `download` attribute for direct file download
+- Bug fix: moved loadApps useCallback before useEffect (was causing ReferenceError)
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- Admin settings: App Download card with upload form (VLM 10/10)
+- Uploaded test-app.apk v1.0.0 → appeared in list with Active badge
+- Login screen: Android v1.0.0 download button visible (VLM 10/10)
+- Download link confirmed in DOM
+- Pushed to GitHub: https://github.com/babyline00/e-qarza
+
+Stage Summary:
+- Complete app download system: admin uploads APK/IPA → download buttons appear on login screen
+- Users can download the app directly from the login page
+- Only one active app per platform (new upload replaces old)
+- Lint clean, pushed to GitHub
