@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
+import { syncOverdueStatus } from '@/lib/overdue'
 
 // GET /api/applications — current user's applications (newest first)
 export async function GET() {
   const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  await syncOverdueStatus()
 
   const apps = await db.loanApplication.findMany({
     where: { userId: user.id },
@@ -35,6 +38,7 @@ export async function GET() {
       amount: i.amount,
       status: i.status,
       paidAt: i.paidAt?.toISOString() || null,
+      paymentId: i.paymentId || null,
     })),
     feePayment: a.payments.find((p) => p.type === 'processing_fee') || null,
   }))

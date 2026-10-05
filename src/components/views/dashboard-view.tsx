@@ -5,7 +5,9 @@ import { useAppStore, type View } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
+import { RepaymentChart } from './repayment-chart'
 import { fmtPKR, fmtDate, timeAgo, loanTotals } from '@/lib/format'
 import {
   Wallet, FileText, Bell, ArrowRight, ChevronRight,
@@ -56,7 +58,7 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
       </div>
 
       {/* Hero card */}
-      <div className="relative overflow-hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-md">
+      <div className="relative overflow-hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-md animate-fade-up">
         <div className="relative z-10">
           <p className="text-xs font-medium uppercase tracking-wide text-white/80">Total Loan Amount</p>
           <p className="mt-1 text-3xl font-extrabold">{fmtPKR(totalLoanAmount)}</p>
@@ -184,6 +186,13 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Repayment history chart */}
+      {activeApp && (activeApp.status === 'active' || activeApp.status === 'completed') && (
+        <div className="mt-4">
+          <RepaymentChart application={activeApp} />
+        </div>
       )}
 
       {/* Recent notifications */}

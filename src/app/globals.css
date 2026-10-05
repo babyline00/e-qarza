@@ -160,3 +160,60 @@
 .text-brand {
   color: oklch(0.60 0.20 38);
 }
+
+/* Print: show only the receipt when body has .printing-receipt */
+@media print {
+  body.printing-receipt > * { display: none !important; }
+  body.printing-receipt .print-receipt-area {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: white !important;
+  }
+  body.printing-receipt .print\:hidden { display: none !important; }
+  body.printing-receipt .receipt-body { border: 0 !important; }
+}
+
+/* Subtle entrance animation for cards */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Soft pulse for pending/loading indicators */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.animate-soft-pulse {
+  animation: soft-pulse 2s ease-in-out infinite;
+}
+
+/* Number counter pop */
+@keyframes pop {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+.animate-pop {
+  animation: pop 0.3s ease-out both;
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+

@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/shared/page-header'
+import { AdminManageTab } from './admin-manage-tab'
 import { api } from '@/lib/api-client'
 import { fmtPKR, fmtDateTime } from '@/lib/format'
 import { toast } from 'sonner'
 import {
   ShieldCheck, Banknote, Check, X, Loader2, Inbox, User as UserIcon, FileImage,
-  RefreshCw,
+  RefreshCw, Settings,
 } from 'lucide-react'
 
 interface KycItem {
@@ -130,6 +131,12 @@ export function AdminView() {
             {payments.length > 0 && (
               <Badge className="ml-1 h-5 border-0 bg-primary text-primary-foreground text-[10px]">{payments.length}</Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="manage"
+            className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+          >
+            <Settings className="size-4" /> Manage
           </TabsTrigger>
         </TabsList>
 
@@ -308,6 +315,11 @@ export function AdminView() {
               </Card>
             ))
           )}
+        </TabsContent>
+
+        {/* Manage plans + banks */}
+        <TabsContent value="manage" className="mt-4">
+          <AdminManageTab />
         </TabsContent>
       </Tabs>
     </div>

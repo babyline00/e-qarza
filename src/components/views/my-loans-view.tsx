@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { PageHeader } from '@/components/shared/page-header'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
+import { ReceiptModal } from '@/components/shared/receipt-modal'
 import { fmtPKR, fmtDate, loanTotals, fmtDateTime } from '@/lib/format'
-import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt, AlertCircle, Wallet } from 'lucide-react'
+import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt, AlertCircle, Wallet, Download } from 'lucide-react'
 
 interface Props {
   onRefresh?: () => void
@@ -18,6 +19,7 @@ interface Props {
 export function MyLoansView({ onRefresh }: Props) {
   const { applications } = useAppStore()
   const [payInstallment, setPayInstallment] = useState<{ id: string; number: number; dueDate: string; amount: number; status: string } | null>(null)
+  const [receiptId, setReceiptId] = useState<string | null>(null)
 
   if (applications.length === 0) {
     return (
@@ -136,7 +138,7 @@ export function MyLoansView({ onRefresh }: Props) {
                                 <span className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${circleClass}`}>
                                   {Icon ? <Icon className="size-4" /> : i.number}
                                 </span>
-                                <div className="min-w-0">
+                                <div className="min-w-0 leading-tight">
                                   <p className="text-sm font-medium">Installment #{i.number}</p>
                                   <p className="text-xs text-muted-foreground">
                                     Due {fmtDate(i.dueDate)}{i.paidAt && ` • Paid ${fmtDate(i.paidAt)}`}
@@ -152,7 +154,14 @@ export function MyLoansView({ onRefresh }: Props) {
                                   <Badge variant="outline" className="gap-1"><Clock className="size-3" /> Verifying</Badge>
                                 )}
                                 {i.status === 'paid' && (
-                                  <Badge className="gap-1 bg-success text-success-foreground border-0 hover:bg-success"><CheckCircle2 className="size-3" /> Paid</Badge>
+                                  <>
+                                    <Badge className="gap-1 bg-success text-success-foreground border-0 hover:bg-success"><CheckCircle2 className="size-3" /> Paid</Badge>
+                                    {i.paymentId && (
+                                      <Button size="sm" variant="ghost" className="h-7 gap-1 text-primary" onClick={() => setReceiptId(i.paymentId!)}>
+                                        <Download className="size-3.5" /> Receipt
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -173,6 +182,7 @@ export function MyLoansView({ onRefresh }: Props) {
         onClose={() => setPayInstallment(null)}
         onPaid={() => onRefresh?.()}
       />
+      <ReceiptModal paymentId={receiptId} onClose={() => setReceiptId(null)} />
     </div>
   )
 }

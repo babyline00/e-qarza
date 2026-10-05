@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
+import { syncOverdueStatus } from '@/lib/overdue'
 
 // GET /api/me — aggregate state used by the SPA to route
 export async function GET() {
   const user = await getSessionUser()
   if (!user) return NextResponse.json({ user: null, kyc: null, applications: [], notifications: [], banks: [], plans: [] })
+
+  // lazily flag overdue installments
+  await syncOverdueStatus()
 
   const [applications, notifications, banks, plans] = await Promise.all([
     db.loanApplication.findMany({
@@ -70,6 +74,7 @@ export async function GET() {
         amount: i.amount,
         status: i.status,
         paidAt: i.paidAt?.toISOString() || null,
+        paymentId: i.paymentId || null,
       })),
       feePayment: a.payments.find((p) => p.type === 'processing_fee') || null,
     })),

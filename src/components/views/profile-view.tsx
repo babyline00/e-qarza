@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { PageHeader } from '@/components/shared/page-header'
+import { ChangePasswordCard } from './change-password-card'
 import { fmtRupees, fmtDate } from '@/lib/format'
 import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Users, IdCard, BadgeCheck } from 'lucide-react'
 
@@ -99,6 +100,10 @@ export function ProfileView() {
           </CardContent>
         </Card>
       )}
+
+      <div className="mt-4">
+        <ChangePasswordCard />
+      </div>
     </div>
   )
 }
