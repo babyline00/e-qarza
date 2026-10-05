@@ -1,0 +1,165 @@
+// Loan Management Application — Prisma schema
+// SQLite backend. All monetary values stored as integer minor units (paisa) to
+// avoid floating point drift; convert to rupees in the UI.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  phone        String?
+  name         String?
+  passwordHash String
+  role         String   @default("user") // "user" | "admin"
+  // lifecycle stage drives the SPA routing
+  stage        String   @default("auth") // auth | kyc | kyc_pending | loan_select | fee_pending | fee_paid | active | rejected
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  kycProfile     KycProfile?
+  applications   LoanApplication[]
+  payments       Payment[]
+  notifications  Notification[]
+}
+
+model KycProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Step 1 — identity
+  cnicName      String?
+  fatherName    String?
+  dob           String?
+  phoneNumber   String?
+  cnicFrontPath String?
+  cnicBackPath  String?
+  selfiePath    String?
+
+  // Step 2 — financial
+  education     String?
+  maritalStatus String?
+  gender        String?
+  city          String?
+  address       String?
+  occupation    String?
+  monthlyIncome Int?     // minor units (paisa)
+  employment    String?  // employed | self-employed | business | student | unemployed
+
+  // Step 3 — references
+  referenceName     String?
+  referencePhone    String?
+  referenceRelation String?
+
+  status        String   @default("draft") // draft | submitted | approved | rejected
+  rejectReason  String?
+  submittedAt   DateTime?
+  reviewedAt    DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model LoanPlan {
+  id              String   @id @default(cuid())
+  name            String
+  amount          Int      // minor units
+  interestRate    Float    // annual % e.g. 12.5
+  tenureMonths    Int
+  processingFee   Int      // minor units — first payment due before disbursement
+  description     String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  applications    LoanApplication[]
+}
+
+model LoanApplication {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId        String
+
+  // snapshot of plan at apply time
+  amount        Int
+  interestRate  Float
+  tenureMonths  Int
+  processingFee Int
+
+  status        String   @default("fee_pending")
+  // fee_pending | fee_submitted | fee_approved | fee_rejected | active | completed | rejected
+  feePaymentId  String?
+  rejectReason  String?
+  appliedAt     DateTime @default(now())
+  activatedAt   DateTime?
+  plan          LoanPlan @relation(fields: [planId], references: [id])
+
+  installments  Installment[]
+  payments      Payment[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Installment {
+  id              String   @id @default(cuid())
+  applicationId   String
+  application     LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  number          Int      // 1..N
+  dueDate         String   // ISO date
+  amount          Int      // minor units (principal + interest portion)
+  status          String   @default("pending") // pending | paid | overdue
+  paymentId       String?
+  paidAt          DateTime?
+
+  createdAt       DateTime @default(now())
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String?
+  application   LoanApplication? @relation(fields: [applicationId], references: [id])
+  type          String   // processing_fee | installment
+  amount        Int      // minor units
+  status        String   @default("submitted") // submitted | approved | rejected
+  proofPath     String?
+  txnRef        String?
+  rejectReason  String?
+  createdAt     DateTime @default(now())
+  reviewedAt    DateTime?
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("info") // info | success | warning | error
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model BankDetail {
+  id        String   @id @default(cuid())
+  bankName  String
+  accountTitle String
+  accountNumber String
+  iban      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AdminSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
