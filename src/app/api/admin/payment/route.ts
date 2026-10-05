@@ -136,11 +136,13 @@ export async function POST(req: NextRequest) {
         })
         if (app && app.installments.every((i) => i.status === 'paid')) {
           await db.loanApplication.update({ where: { id: app.id }, data: { status: 'completed' } })
+          // reset user stage to loan_select so they can apply for a new loan (refinancing)
+          await db.user.update({ where: { id: app.userId }, data: { stage: 'loan_select' } })
           await db.notification.create({
             data: {
               userId: app.userId,
               title: 'Loan Completed 🎉',
-              message: 'Congratulations! You have paid off your loan in full.',
+              message: 'Congratulations! You have paid off your loan in full. You can now apply for a new loan if needed.',
               type: 'success',
             },
           })

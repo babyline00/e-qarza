@@ -166,7 +166,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopNav onLogout={handleLogout} onRefresh={refresh} onNavigate={setView} activeView={view} />
-      <main className="flex-1">{content}</main>
+      <main id="main-content" className="flex-1">{content}</main>
       <Footer />
     </div>
   )

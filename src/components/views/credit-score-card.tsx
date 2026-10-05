@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { api } from '@/lib/api-client'
 import { fmtPKR } from '@/lib/format'
 import { toast } from 'sonner'
-import { TrendingUp, CheckCircle2, Clock, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { TrendingUp, CheckCircle2, Clock, AlertTriangle, ShieldCheck, Award, Banknote, Info } from 'lucide-react'
 
 interface ScoreData {
   score: number
@@ -19,6 +21,13 @@ interface ScoreData {
     overdueCount: number
     kycVerified: boolean
   }
+  breakdown: {
+    label: string
+    description: string
+    weight: number
+    points: number
+    icon: string
+  }[]
   maxAmount: number
 }
 
@@ -29,9 +38,14 @@ const RATING_CONFIG = {
   poor: { label: 'Poor', color: '#EF4444', bg: 'bg-destructive/10', text: 'text-destructive', desc: 'Needs improvement' },
 }
 
+const iconMap: Record<string, React.ElementType> = {
+  CheckCircle2, AlertTriangle, ShieldCheck, Award, Banknote, Info,
+}
+
 export function CreditScoreCard() {
   const [data, setData] = useState<ScoreData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showBreakdown, setShowBreakdown] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +81,7 @@ export function CreditScoreCard() {
   const dashOffset = circumference - (pct / 100) * circumference
 
   return (
+    <>
     <Card className="rounded-2xl overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-center gap-2 mb-3">
@@ -135,12 +150,69 @@ export function CreditScoreCard() {
           </div>
         </div>
 
-        {/* max eligible amount */}
+        {/* max eligible amount + breakdown button */}
         <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
           <span className="text-xs text-muted-foreground">Recommended max loan</span>
           <span className="text-sm font-bold text-brand">{fmtPKR(data.maxAmount)}</span>
         </div>
+        <Button variant="ghost" size="sm" className="w-full mt-2 text-xs gap-1" onClick={() => setShowBreakdown(true)}>
+          <Info className="size-3.5" /> How is my score calculated?
+        </Button>
       </CardContent>
     </Card>
+
+    {/* Breakdown modal */}
+    <Dialog open={showBreakdown} onOpenChange={setShowBreakdown}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <TrendingUp className="size-5 text-primary" /> Credit Score Breakdown
+          </DialogTitle>
+          <DialogDescription>
+            Your score of <strong style={{ color: config.color }}>{data.score}</strong> ({config.label}) is calculated from these factors:
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          {data.breakdown.map((f, i) => {
+            const Icon = iconMap[f.icon] || Info
+            const isPenalty = f.points < 0
+            const pct = f.weight > 0 ? Math.max(0, (f.points / f.weight) * 100) : 0
+            return (
+              <div key={i} className="rounded-xl border p-3">
+                <div className="flex items-center gap-2">
+                  <span className={`grid size-8 place-items-center rounded-lg shrink-0 ${isPenalty ? 'bg-destructive/10 text-destructive' : f.points > 0 ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{f.label}</p>
+                      <span className={`text-sm font-bold ${isPenalty ? 'text-destructive' : 'text-success'}`}>
+                        {f.points > 0 ? '+' : ''}{f.points} pts
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{f.description}</p>
+                  </div>
+                </div>
+                {f.weight > 0 && (
+                  <div className="mt-2">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={isPenalty ? 'bg-destructive' : 'bg-success'}
+                        style={{ width: `${pct}%`, transition: 'width 0.5s ease' }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{f.points} / {f.weight} max points</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+          <div className="rounded-lg bg-muted/50 p-3 text-center">
+            <p className="text-xs text-muted-foreground">Base score starts at 300. Maximum possible: 900.</p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

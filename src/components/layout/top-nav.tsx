@@ -147,9 +147,9 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
             className="relative text-white hover:bg-white/15"
             aria-label="Notifications"
           >
-            <Bell className="size-5" />
+            <Bell className={`size-5 ${unread > 0 ? 'animate-soft-pulse' : ''}`} />
             {unread > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+              <span className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-pop">
                 {unread}
               </span>
             )}

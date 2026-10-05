@@ -13,7 +13,7 @@ import { CreditScoreCard } from './credit-score-card'
 import { fmtPKR, fmtDate, timeAgo, loanTotals } from '@/lib/format'
 import {
   Wallet, FileText, Bell, ArrowRight, ChevronRight,
-  CheckCircle2, Clock, AlertCircle, CalendarClock, Coins, Calculator,
+  CheckCircle2, Clock, AlertCircle, CalendarClock, Coins, Calculator, Sparkles,
 } from 'lucide-react'
 
 interface Props {
@@ -109,6 +109,11 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
             <p className="mt-1 text-sm text-muted-foreground">
               Once your loan is approved, your dashboard will show the repayment schedule here.
             </p>
+            {applications.some((a) => a.status === 'completed') && (
+              <Button className="mt-4 bg-brand-gradient text-white hover:opacity-90 gap-2" onClick={() => onNavigate('my_loans')}>
+                <Sparkles className="size-4" /> Apply for a new loan
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

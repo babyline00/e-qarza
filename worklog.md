@@ -625,3 +625,73 @@ Unresolved / next-phase recommendations:
 - Admin: broadcast notification to all users
 - Credit score factor breakdown modal (detailed explanation of how score is computed)
 - Notification preferences (let users choose email vs SMS vs in-app)
+
+---
+Task ID: S7-1 to S7-7 (webDevReview cron round 7)
+Agent: main
+Task: QA, add notification preferences, credit score breakdown modal, admin broadcast, loan refinancing, accessibility + styling polish
+
+Work Log:
+- QA via agent-browser + VLM: dashboard stable (NO BUGS), toast transient as expected
+- Feature: notification preferences (email/SMS/in-app toggles)
+  * Added `notifPrefs String @default("in_app,email,sms")` to User schema (comma-separated enabled channels)
+  * New API `GET/POST /api/notifications/preferences` — fetch + update channel preferences (validates ≥1 channel enabled)
+  * Updated `POST /api/notify/test` to respect preferences (only sends on enabled channels)
+  * New `NotificationPreferences` component — 3 channel cards (In-App/Email/SMS) with icons + descriptions + Switch toggles, channel count badge, Save button
+  * Added to bottom of notifications view
+  * Verified: VLM 10/10
+- Feature: credit score factor breakdown modal
+  * Updated `CreditScore` interface to include `breakdown` array (label/description/weight/points/icon per factor)
+  * Updated `computeCreditScore` to build breakdown: Payment History (40/240), Completed Loans (0/120), Repayment Volume (0/90), Overdue Penalty (0/-90), KYC Verification (60/60)
+  * New "How is my score calculated?" ghost button on CreditScoreCard → opens Dialog modal
+  * Modal shows 5 factor cards with icons, descriptions, points earned (+/-), progress bars (green for positive, red for penalty), base/max score explanation
+  * Verified: VLM 9/10
+- Feature: admin broadcast notification to all users
+  * New API `POST /api/admin/broadcast` — sends in-app notification to all non-banned users (validates title/message length, returns sent count)
+  * New `BroadcastCard` component — orange gradient header, title input, type Select (info/success/warning/error), message Textarea with char counter, "Broadcast to All Users" button, success confirmation
+  * Added to top of admin Users tab
+  * Verified: sent "System Maintenance" broadcast → "Successfully delivered to N users" (VLM 10/10)
+- Feature: loan refinancing (apply after completing a loan)
+  * Updated loan completion logic in `/api/admin/payment` — when all installments paid, sets user stage back to 'loan_select' (was stuck on 'active'), updated completion notification message to mention new loan eligibility
+  * Existing apply logic already allowed new applications after completion (completed/rejected not in blocked statuses)
+  * Added "Apply for a new loan" button (Sparkles icon) to dashboard empty state when user has completed loans but no active one
+  * Added Sparkles to lucide imports
+- Styling polish + accessibility
+  * Added "Skip to main content" accessibility link in layout (sr-only, focus-visible) + id="main-content" on main element
+  * Notification bell now pulses (animate-soft-pulse) when there are unread notifications
+  * Notification badge uses animate-pop for a subtle pop-in effect
+  * Credit score breakdown progress bars animated with width transition
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Credit Score breakdown modal: 5 factors render with points + progress bars (VLM 9/10)
+  * Notification preferences: 3 channel toggles + Save button at bottom of notifications page (VLM 10/10)
+  * Admin Broadcast: card at top of Users tab, sent broadcast → "Successfully delivered to N users" (VLM 10/10)
+  * Loan refinancing: empty state shows "Apply for a new loan" button when completed loans exist
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 5 new features added and verified: notification preferences (channel toggles), credit score breakdown modal (5 factors with progress bars), admin broadcast (to all users), loan refinancing (stage reset on completion + apply button), accessibility (skip link + bell animations)
+- All features respect orange E-Qarza design system + work in both light and dark modes
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has: user-controlled notification channels, transparent credit scoring with detailed breakdown, admin broadcast capability, loan refinancing after completion, and accessibility improvements
+- Full lifecycle now supports: apply → complete → apply again (refinancing), with credit score updating based on repayment history
+- Admin can broadcast announcements to all users, users can control which notification channels they receive
+- Accessibility: skip-to-content link, focus-visible rings, ARIA labels, reduced-motion support
+
+Unresolved / next-phase recommendations:
+- WebSocket real-time notifications (currently polled every 12s)
+- Unit tests for credit score logic, eligibility, overdue reminders, loan math, broadcast
+- Multi-language support (Urdu locale)
+- User profile photo: allow crop/resize before upload
+- Credit score history (track score changes over time with a trend chart)
+- Admin: filter users by credit score tier
+- PWA push notifications
+- Notification preferences: per-event-type (let users choose which events trigger which channels)
+- Admin: broadcast with channel targeting (email-only, sms-only, or all)
+- Loan refinancing: show previous loan history + improved terms for good credit score
+- ARIA live regions for dynamic content (notifications count, credit score updates)
+- Keyboard shortcuts (e.g., 'n' for notifications, 'd' for dashboard)

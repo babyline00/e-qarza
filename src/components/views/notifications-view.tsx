@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/shared/page-header'
+import { NotificationPreferences } from './notification-preferences'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { timeAgo } from '@/lib/format'
@@ -130,6 +131,11 @@ export function NotificationsView() {
             </Card>
           )
         })}
+      </div>
+
+      {/* Notification preferences */}
+      <div className="mt-5">
+        <NotificationPreferences />
       </div>
     </div>
   )

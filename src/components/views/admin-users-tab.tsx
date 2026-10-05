@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { api } from '@/lib/api-client'
 import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
+import { BroadcastCard } from './broadcast-card'
 import {
   Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X,
 } from 'lucide-react'
@@ -115,6 +116,9 @@ export function AdminUsersTab() {
 
   return (
     <div className="space-y-4">
+      {/* Broadcast */}
+      <BroadcastCard />
+
       {/* search + export */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-md">

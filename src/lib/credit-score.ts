@@ -18,6 +18,13 @@ export interface CreditScore {
     overdueCount: number
     kycVerified: boolean
   }
+  breakdown: {
+    label: string
+    description: string
+    weight: number // max points possible
+    points: number // actual points earned
+    icon: string
+  }[]
   maxAmount: number // recommended max loan (paisa) based on score
 }
 
@@ -46,29 +53,69 @@ export async function computeCreditScore(userId: string): Promise<CreditScore> {
 
   // --- score computation ---
   let score = BASE
+  const breakdown: CreditScore['breakdown'] = []
 
   // payment completion ratio (40% = 240 pts)
+  let paymentPoints = 0
   if (totalInstallments > 0) {
     const ratio = onTimePayments / totalInstallments
-    score += Math.round(ratio * 240)
+    paymentPoints = Math.round(ratio * 240)
   } else if (kycVerified) {
-    // no installments yet but verified → small bonus
-    score += 30
+    paymentPoints = 30
   }
+  score += paymentPoints
+  breakdown.push({
+    label: 'Payment History',
+    description: `${onTimePayments} of ${totalInstallments} installments paid on time${totalInstallments === 0 ? ' (no loans yet, KYC bonus)' : ''}`,
+    weight: 240,
+    points: paymentPoints,
+    icon: 'CheckCircle2',
+  })
 
   // completed loans (20% = 120 pts), max 2 loans counted
-  score += Math.min(completedLoans, 2) * 60
+  const loanPoints = Math.min(completedLoans, 2) * 60
+  score += loanPoints
+  breakdown.push({
+    label: 'Completed Loans',
+    description: `${completedLoans} loan${completedLoans !== 1 ? 's' : ''} fully repaid (max 2 counted)`,
+    weight: 120,
+    points: loanPoints,
+    icon: 'Award',
+  })
 
   // total volume repaid (15% = 90 pts) — scale by 100k rupee increments up to 5
   const repaidRupees = totalRepaid / 100
   const volumeScore = Math.min(Math.floor(repaidRupees / 100000), 5) * 18
   score += volumeScore
+  breakdown.push({
+    label: 'Repayment Volume',
+    description: `Rs ${repaidRupees.toLocaleString('en-PK', { maximumFractionDigits: 0 })} repaid in total`,
+    weight: 90,
+    points: volumeScore,
+    icon: 'Banknote',
+  })
 
   // overdue penalty (15% = up to -90 pts)
-  score -= Math.min(overdueCount * 30, 90)
+  const overduePenalty = Math.min(overdueCount * 30, 90)
+  score -= overduePenalty
+  breakdown.push({
+    label: 'Overdue Penalty',
+    description: `${overdueCount} overdue installment${overdueCount !== 1 ? 's' : ''}${overdueCount > 0 ? ` (−${overduePenalty} pts)` : ''}`,
+    weight: 0,
+    points: -overduePenalty,
+    icon: 'AlertTriangle',
+  })
 
   // KYC verification (10% = 60 pts)
-  if (kycVerified) score += 60
+  const kycPoints = kycVerified ? 60 : 0
+  score += kycPoints
+  breakdown.push({
+    label: 'KYC Verification',
+    description: kycVerified ? 'Identity verified' : 'KYC not yet approved',
+    weight: 60,
+    points: kycPoints,
+    icon: 'ShieldCheck',
+  })
 
   score = Math.max(BASE, Math.min(MAX, score))
 
@@ -95,6 +142,7 @@ export async function computeCreditScore(userId: string): Promise<CreditScore> {
       overdueCount,
       kycVerified,
     },
+    breakdown,
     maxAmount,
   }
 }
