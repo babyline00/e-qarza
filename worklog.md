@@ -1342,3 +1342,39 @@ Stage Summary:
 - Face match system using VLM already in place
 - Code pushed to GitHub: babyline00/e-qarza
 - Lint clean, no runtime errors
+
+---
+Task ID: S1-S5 (Logo Upload, Tab Colors, Remove Demo, Caching, GitHub Push)
+Agent: main
+Task: Add logo upload in settings, remove demo accounts, add caching for faster loads, push to GitHub
+
+Work Log:
+- Feature: Site Logo upload in Settings
+  * New API `GET/POST/DELETE /api/admin/logo` — upload/remove site logo (1MB max, JPG/PNG/WEBP/SVG)
+  * Stored in AdminSetting table as `siteLogo` key
+  * Settings UI: Site Logo card at top with dashed preview box, orange "Upload Logo" button, remove button
+  * Logo preview shown in 80x80 box, old logo deleted on replace
+- Removed: Demo accounts box from auth page
+  * Replaced with "By continuing, you agree to our Terms of Service & Privacy Policy" text
+  * Clean, professional login page without test credentials visible
+- Feature: Client-side caching (memory + sessionStorage)
+  * New `src/lib/cache.ts` — getCached/setCached/invalidateCache/clearAllCache/cachedFetch
+  * Memory cache (Map) for instant reads + sessionStorage for persistence across page reloads
+  * Updated `src/lib/api-client.ts` — GET requests cached for 15s, POST/PUT/DELETE invalidates all cache
+  * Reduces API calls significantly — faster page loads, less server load
+- Optimization: Image lazy loading
+  * Global CSS: `img { loading: lazy; decoding: async; }` — all images load on scroll
+- Pushed to GitHub: https://github.com/babyline00/e-qarza (latest commit pushed)
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- VLM: auth page 9/10 (demo removed, ToS text present)
+- VLM: settings tab 10/10 (Site Logo card with upload + format hint)
+- All settings sections visible: Site Logo, Custom Code, Auto-Approve KYC, Staff Roles
+- GitHub push successful
+
+Stage Summary:
+- 4 features: logo upload, removed demo accounts, client-side caching, GitHub push
+- Faster page loads via memory + sessionStorage caching (15s TTL for GET requests)
+- Clean auth page without test credentials
+- Lint clean, pushed to GitHub
