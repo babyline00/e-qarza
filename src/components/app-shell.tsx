@@ -19,6 +19,7 @@ import { TransactionsView } from '@/components/views/transactions-view'
 import { AdminView } from '@/components/views/admin-view'
 import { DashboardSkeleton } from '@/components/shared/dashboard-skeleton'
 import { KeyboardShortcutsHelp } from '@/components/shared/keyboard-shortcuts-help'
+import { OnboardingTour } from '@/components/shared/onboarding-tour'
 import { TopNav } from '@/components/layout/top-nav'
 import { Footer } from '@/components/layout/footer'
 import { useKeyboardShortcuts } from '@/lib/use-keyboard-shortcuts'
@@ -175,6 +176,7 @@ export function AppShell() {
       <main id="main-content" className="flex-1">{content}</main>
       <Footer />
       <KeyboardShortcutsHelp />
+      <OnboardingTour />
     </div>
   )
 }

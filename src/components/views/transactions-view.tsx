@@ -71,7 +71,11 @@ export function TransactionsView() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <PageHeader title="Transaction History" description="All your payments in one place." icon={ReceiptIcon} />
+      <PageHeader title="Transaction History" description="All your payments in one place." icon={ReceiptIcon}>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('/api/transactions/export', '_blank')}>
+          <Download className="size-3.5" /> Export CSV
+        </Button>
+      </PageHeader>
 
       {/* summary cards */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">

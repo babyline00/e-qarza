@@ -762,3 +762,70 @@ Unresolved / next-phase recommendations:
 - Onboarding tour for new users (interactive walkthrough of features)
 - Data export: let users download their own transaction history as CSV
 - Admin: user detail view with full history (applications, payments, credit score timeline)
+
+---
+Task ID: S9-1 to S9-7 (webDevReview cron round 9)
+Agent: main
+Task: QA, add user CSV export, admin user detail modal, onboarding tour, broadcast scheduling, styling polish
+
+Work Log:
+- QA via agent-browser + VLM: dashboard stable (NO BUGS), toast transient + flat chart expected
+- Feature: user transaction history CSV export
+  * New API `GET /api/transactions/export` — downloads current user's transactions as CSV (Date/Type/Plan/Amount/Status/Txn Ref/Reviewed), proper escaping + Content-Disposition
+  * Added "Export CSV" button to transactions view header
+  * Verified: returns correct CSV with 2 transactions (VLM 10/10)
+- Feature: admin user detail view (full history modal)
+  * New API `GET /api/admin/users/[id]` — fetches full user detail: KYC, applications (with installments), payments, credit score, score history
+  * New `UserDetailModal` component — orange header with avatar + verified/banned badges, credit score + loans summary cards, scrollable sections for applications/payments/score-history, color-coded status badges
+  * Added "View details" (Eye icon) button to each user card in admin-users-tab
+  * Verified: modal opens with full history (VLM 9/10)
+- Feature: onboarding tour for new users
+  * New `OnboardingTour` component — 5-step walkthrough (Welcome/Track Loans/Credit Score/Notifications/Keyboard Shortcuts), orange gradient icons, progress dots, Back/Next/Skip buttons, step counter
+  * Uses localStorage to show only once per browser
+  * Opens automatically 800ms after dashboard renders for first-time users
+  * Wired into AppShell for active users
+  * Verified: tour auto-opens on first visit, 5 steps with progress dots (VLM 9/10)
+- Feature: broadcast scheduling (send at future date/time)
+  * New `ScheduledBroadcast` model (title/message/type/channel/scheduledFor/sent) + db:push + db:generate
+  * New `src/lib/scheduled-broadcast.ts` — `processScheduledBroadcasts()` lazily sends due broadcasts on admin stats load
+  * Updated `GET/POST/DELETE /api/admin/broadcast` — supports `scheduledFor` param (stores for later), lists scheduled, cancels unsent
+  * Updated BroadcastCard — "Schedule for later" checkbox + datetime-local input, button changes to "Schedule Broadcast", success message differs for scheduled vs immediate
+  * Wired `processScheduledBroadcasts` into `/api/admin/stats` (polled every 20s)
+  * Verified: scheduled "Holiday Greeting" for tomorrow 9am → "Broadcast scheduled successfully" (VLM 8/10)
+- Styling polish
+  * New CSS: `.nav-active` glow, `main` content-fade animation (smooth view transitions)
+  * Onboarding tour with orange gradient icons + animated progress dots
+  * User detail modal with scrollable sections + custom scrollbar styling
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Onboarding tour: auto-opens, 5 steps with progress dots, close works (VLM 9/10)
+  * Transactions CSV export: button present + API returns correct CSV (VLM 10/10)
+  * Admin user detail: modal opens with full history (applications/payments/credit score) (VLM 9/10)
+  * Broadcast scheduling: checkbox + datetime input, "Schedule Broadcast" button, success confirmation (VLM 8/10)
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 5 new features added and verified: user transaction CSV export, admin user detail modal (full history), onboarding tour (5-step walkthrough), broadcast scheduling (future date/time), styling polish (nav glow + content fade)
+- All features respect orange E-Qarza design system + work in both light and dark modes
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has: user data export, admin user detail views, new-user onboarding, scheduled broadcasts, and polished micro-interactions
+- Full lifecycle now includes: onboarding tour for new users, CSV export for personal data, admin can view full user history + schedule broadcasts
+- Users can download their transaction history, new users get a guided tour, admins can schedule announcements
+
+Unresolved / next-phase recommendations:
+- WebSocket real-time notifications (currently polled every 12s)
+- Unit tests for all business logic (credit score, eligibility, overdue, broadcast, scheduling)
+- Multi-language support (Urdu locale)
+- User profile photo: allow crop/resize before upload
+- Per-event-type notification preferences
+- PWA push notifications + service worker
+- Admin: scheduled broadcast list view + cancel UI
+- Loan refinancing: show previous loan history + improved terms for good credit score
+- ARIA live regions for more dynamic content
+- Onboarding tour: highlight specific UI elements (spotlight effect)
+- Admin: export filtered users/applications by date range
+- User: download loan agreement + receipts as PDF (already done, can enhance with batch download)

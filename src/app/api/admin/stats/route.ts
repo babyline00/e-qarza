@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
+import { processScheduledBroadcasts } from '@/lib/scheduled-broadcast'
 
 // GET /api/admin/stats — aggregate platform metrics for admin analytics
 export async function GET() {
   const u = await getSessionUser()
   if (!u || u.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // lazily process any due scheduled broadcasts
+  await processScheduledBroadcasts()
 
   const [
     totalUsers,

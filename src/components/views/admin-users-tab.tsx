@@ -13,8 +13,9 @@ import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import { BroadcastCard } from './broadcast-card'
 import {
-  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X, TrendingUp,
+  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X, TrendingUp, Eye,
 } from 'lucide-react'
+import { UserDetailModal } from './user-detail-modal'
 
 interface UserItem {
   id: string
@@ -46,6 +47,7 @@ export function AdminUsersTab() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkActing, setBulkActing] = useState(false)
   const [tierFilter, setTierFilter] = useState<string>('all')
+  const [detailUserId, setDetailUserId] = useState<string | null>(null)
 
   const load = useCallback(async (q?: string, tier?: string) => {
     setLoading(true)
@@ -244,6 +246,15 @@ export function AdminUsersTab() {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                      onClick={() => setDetailUserId(u.id)}
+                      title="View details"
+                    >
+                      <Eye className="size-3.5" />
+                    </Button>
                     {u.banned ? (
                       <Button
                         size="sm"
@@ -289,6 +300,8 @@ export function AdminUsersTab() {
         <AlertTriangle className="size-4 shrink-0 mt-0.5" />
         <p>Banning a user immediately revokes their session. Deleting a user permanently removes their KYC, loan applications, and payment history — this cannot be undone.</p>
       </div>
+
+      <UserDetailModal userId={detailUserId} onClose={() => setDetailUserId(null)} />
     </div>
   )
 }

@@ -177,3 +177,15 @@ model CreditScoreHistory {
   createdAt DateTime @default(now())
 }
 
+model ScheduledBroadcast {
+  id           String   @id @default(cuid())
+  title        String
+  message      String
+  type         String   @default("info")
+  channel      String   @default("in_app")
+  scheduledFor DateTime
+  sent         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+

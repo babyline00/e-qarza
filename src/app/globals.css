@@ -258,6 +258,20 @@
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+/* Active nav button subtle glow */
+.nav-active {
+  box-shadow: 0 0 0 2px oklch(0.70 0.19 45 / 0.3);
+}
+
+/* Smooth content transition */
+main {
+  animation: content-fade 0.2s ease-out;
+}
+@keyframes content-fade {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
 /* Focus-visible ring (accessible keyboard nav) */
 *:focus-visible {
   outline: 2px solid oklch(0.70 0.19 45);
