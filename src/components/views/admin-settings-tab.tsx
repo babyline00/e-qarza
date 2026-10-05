@@ -10,11 +10,13 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Code, MessageSquare, Save, Loader2, UserCog,
   Plus, Trash2, Pencil, X, Shield, Check, ShieldCheck, Image as ImageIcon, Upload,
+  Smartphone, Apple, Download,
 } from 'lucide-react'
 
 interface Settings {
@@ -57,6 +59,10 @@ export function AdminSettingsTab() {
   const [editingStaff, setEditingStaff] = useState<Partial<StaffMember> & { password?: string } | null>(null)
   const [logoPath, setLogoPath] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [apps, setApps] = useState<{ id: string; platform: string; version: string; fileName: string; filePath: string; fileSize: number; active: boolean }[]>([])
+  const [uploadingApp, setUploadingApp] = useState(false)
+  const [appPlatform, setAppPlatform] = useState('android')
+  const [appVersion, setAppVersion] = useState('')
 
   const loadSettings = useCallback(async () => {
     try {
@@ -79,12 +85,19 @@ export function AdminSettingsTab() {
     }
   }, [])
 
+  const loadApps = useCallback(async () => {
+    try {
+      const r = await api<{ apps: typeof apps }>('/api/admin/app-download')
+      setApps(r.apps)
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     loadSettings()
     loadStaff()
-    // Load logo
+    loadApps()
     api<{ logoPath: string | null }>('/api/admin/logo').then(r => setLogoPath(r.logoPath)).catch(() => {})
-  }, [loadSettings, loadStaff])
+  }, [loadSettings, loadStaff, loadApps])
 
   async function uploadLogo(file: File | null) {
     if (!file) return
@@ -110,6 +123,39 @@ export function AdminSettingsTab() {
       await api('/api/admin/logo', { method: 'DELETE' })
       setLogoPath(null)
       toast.success('Logo removed')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
+
+  async function uploadApp(file: File | null) {
+    if (!file) return
+    if (!appVersion.trim()) { toast.error('Please enter a version number'); return }
+    setUploadingApp(true)
+    try {
+      const fd = new FormData()
+      fd.append('platform', appPlatform)
+      fd.append('version', appVersion)
+      fd.append('file', file)
+      const res = await fetch('/api/admin/app-download', { method: 'POST', body: fd, credentials: 'same-origin' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || 'Upload failed')
+      toast.success(`${appPlatform === 'android' ? 'Android' : 'iOS'} app uploaded`)
+      setAppVersion('')
+      loadApps()
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setUploadingApp(false)
+    }
+  }
+
+  async function deleteApp(id: string) {
+    if (!confirm('Delete this app file?')) return
+    try {
+      await api(`/api/admin/app-download?id=${id}`, { method: 'DELETE' })
+      toast.success('App deleted')
+      loadApps()
     } catch (e) {
       toast.error((e as Error).message)
     }
@@ -206,6 +252,78 @@ export function AdminSettingsTab() {
               <p className="text-[11px] text-muted-foreground">JPG, PNG, WEBP, SVG — max 1MB</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* App Download Management */}
+      <Card className="rounded-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base"><Download className="size-4 text-primary" /> App Download</CardTitle>
+          <CardDescription>Upload Android/iOS app files — download buttons appear on login screen</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Upload form */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Platform</Label>
+              <Select value={appPlatform} onValueChange={setAppPlatform}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="android">Android (APK)</SelectItem>
+                  <SelectItem value="ios">iOS (IPA)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Version</Label>
+              <Input value={appVersion} onChange={(e) => setAppVersion(e.target.value)} placeholder="e.g. 1.0.0" className="h-9" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">App File</Label>
+              <label className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-brand-gradient px-4 text-sm font-semibold text-white cursor-pointer hover:opacity-90 transition">
+                {uploadingApp ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                {uploadingApp ? 'Uploading...' : 'Upload'}
+                <input
+                  type="file"
+                  accept=".apk,.ipa,application/vnd.android.package-archive,application/octet-stream"
+                  className="hidden"
+                  onChange={(e) => uploadApp(e.target.files?.[0] || null)}
+                  disabled={uploadingApp}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Existing apps list */}
+          {apps.length > 0 && (
+            <div className="space-y-2">
+              {apps.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 rounded-xl border p-3">
+                  <span className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary shrink-0">
+                    {a.platform === 'android' ? <Smartphone className="size-5" /> : <Apple className="size-5" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium">{a.platform === 'android' ? 'Android' : 'iOS'} v{a.version}</p>
+                      {a.active && <Badge className="bg-success/15 text-success border-0 text-[10px]">Active</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{a.fileName} • {(a.fileSize / 1024 / 1024).toFixed(1)} MB</p>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <a href={a.filePath} download className="inline-flex size-8 items-center justify-center rounded-lg text-primary hover:bg-primary/10">
+                      <Download className="size-4" />
+                    </a>
+                    <Button size="sm" variant="ghost" className="size-8 w-8 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteApp(a.id)}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {apps.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">No app files uploaded yet</p>
+          )}
         </CardContent>
       </Card>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,15 +10,31 @@ import { Logo } from '@/components/shared/logo'
 import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { formatPhone, stripPhone, isValidPhone } from '@/lib/phone-format'
-import { Phone, Lock, User as UserIcon, Loader2 } from 'lucide-react'
+import { Phone, Lock, User as UserIcon, Loader2, Smartphone, Apple, Download } from 'lucide-react'
 
 interface Props {
   onAuthed: () => void
 }
 
+interface AppDownloadInfo {
+  id: string
+  platform: string
+  version: string
+  filePath: string
+}
+
 export function AuthView({ onAuthed }: Props) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [loading, setLoading] = useState(false)
+  const [appDownloads, setAppDownloads] = useState<AppDownloadInfo[]>([])
+
+  // Fetch app downloads on mount
+  useEffect(() => {
+    fetch('/api/app-download')
+      .then(r => r.json())
+      .then(data => setAppDownloads(data.apps || []))
+      .catch(() => {})
+  }, [])
 
   // login fields
   const [loginPhone, setLoginPhone] = useState('')
@@ -245,6 +261,31 @@ export function AuthView({ onAuthed }: Props) {
             <p className="mt-4 text-center text-[11px] text-muted-foreground">
               By continuing, you agree to our Terms of Service & Privacy Policy
             </p>
+
+            {/* App download buttons */}
+            {appDownloads.length > 0 && (
+              <div className="mt-4 flex items-center justify-center gap-3 border-t pt-4">
+                {appDownloads.map((app) => (
+                  <a
+                    key={app.id}
+                    href={app.filePath}
+                    download
+                    className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-medium shadow-sm transition hover:border-primary/30 hover:bg-accent"
+                  >
+                    {app.platform === 'android' ? (
+                      <Smartphone className="size-4 text-primary" />
+                    ) : (
+                      <Apple className="size-4 text-primary" />
+                    )}
+                    <div className="leading-tight">
+                      <p className="font-semibold">{app.platform === 'android' ? 'Android' : 'iOS'}</p>
+                      <p className="text-[10px] text-muted-foreground">v{app.version}</p>
+                    </div>
+                    <Download className="size-3.5 text-muted-foreground" />
+                  </a>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
