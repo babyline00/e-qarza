@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
+import { checkEligibility } from '@/lib/eligibility'
 
 // POST /api/plans/apply — create a loan application for a plan
 export async function POST(req: NextRequest) {
@@ -25,6 +26,12 @@ export async function POST(req: NextRequest) {
 
   const plan = await db.loanPlan.findUnique({ where: { id: planId } })
   if (!plan || !plan.active) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+
+  // eligibility check (income-based debt-to-income ratio)
+  const eligibility = await checkEligibility(user.id, plan.amount, plan.interestRate, plan.tenureMonths)
+  if (!eligibility.eligible) {
+    return NextResponse.json({ error: eligibility.reason }, { status: 400 })
+  }
 
   // prevent multiple active applications
   const existing = await db.loanApplication.findFirst({
@@ -59,3 +66,23 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, applicationId: app.id })
 }
+
+// GET /api/plans/apply?planId=<id> — check eligibility for a plan without applying
+export async function GET(req: NextRequest) {
+  const user = await getSessionUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const planId = new URL(req.url).searchParams.get('planId')
+  if (!planId) return NextResponse.json({ error: 'planId required' }, { status: 400 })
+
+  const plan = await db.loanPlan.findUnique({ where: { id: planId } })
+  if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+
+  const eligibility = await checkEligibility(user.id, plan.amount, plan.interestRate, plan.tenureMonths)
+  return NextResponse.json({
+    planName: plan.name,
+    amount: plan.amount,
+    ...eligibility,
+  })
+}
+

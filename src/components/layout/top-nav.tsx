@@ -29,6 +29,7 @@ import {
   ReceiptText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/shared/theme-toggle'
 
 interface Props {
   onLogout: () => void
@@ -74,6 +75,7 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
             <Badge variant="secondary" className="ml-2 hidden sm:inline-flex bg-primary/10 text-primary">Admin</Badge>
           )}
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh">
               <RefreshCw className="size-4" />
             </Button>
@@ -155,6 +157,9 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
           <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh" className="text-white hover:bg-white/15">
             <RefreshCw className="size-4" />
           </Button>
+          <div className="[&_button]:text-white [&_button:hover]:bg-white/15">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { fmtPKR, loanTotals } from '@/lib/format'
 import { Wallet, Loader2, Check, ChevronRight, Coins } from 'lucide-react'
 import { InfoBox } from '@/components/shared/info-box'
+import { EligibilityBadge } from '@/components/shared/eligibility-badge'
 
 interface Props {
   onApplied: () => void
@@ -107,7 +108,10 @@ export function LoanSelectView({ onApplied }: Props) {
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-lg font-bold leading-tight">{fmtPKR(plan.amount)}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-lg font-bold leading-tight">{fmtPKR(plan.amount)}</p>
+                    <EligibilityBadge planId={plan.id} />
+                  </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {plan.tenureMonths} Months &middot; {plan.name}
                   </p>

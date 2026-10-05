@@ -5,12 +5,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { api } from '@/lib/api-client'
 import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import {
-  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download,
+  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download, X,
 } from 'lucide-react'
 
 interface UserItem {
@@ -31,6 +32,8 @@ export function AdminUsersTab() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [acting, setActing] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkActing, setBulkActing] = useState(false)
 
   const load = useCallback(async (q?: string) => {
     setLoading(true)
@@ -66,6 +69,38 @@ export function AdminUsersTab() {
     } finally {
       setActing(null)
     }
+  }
+
+  function toggleSelect(userId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(userId)) next.delete(userId)
+      else next.add(userId)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    setSelected((prev) => (prev.size === users.length ? new Set() : new Set(users.map((u) => u.id))))
+  }
+
+  async function bulkAction(action: 'ban' | 'unban') {
+    if (selected.size === 0) return
+    setBulkActing(true)
+    let ok = 0
+    let fail = 0
+    for (const userId of selected) {
+      try {
+        await api('/api/admin/users', { method: 'POST', body: JSON.stringify({ userId, action }) })
+        ok++
+      } catch {
+        fail++
+      }
+    }
+    toast.success(`${ok} user${ok !== 1 ? 's' : ''} ${action === 'ban' ? 'banned' : 'restored'}${fail > 0 ? `, ${fail} failed` : ''}`)
+    setSelected(new Set())
+    setBulkActing(false)
+    load(query)
   }
 
   const stageLabel: Record<string, { label: string; cls: string }> = {
@@ -120,11 +155,36 @@ export function AdminUsersTab() {
         </Card>
       ) : (
         <div className="space-y-2">
+          {/* bulk action bar */}
+          {selected.size > 0 && (
+            <div className="sticky top-16 z-30 flex items-center gap-2 rounded-xl bg-brand-gradient p-2.5 text-white shadow-md animate-fade-up">
+              <span className="text-sm font-medium ml-1">{selected.size} selected</span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <Button size="sm" variant="ghost" className="h-8 gap-1 text-white hover:bg-white/20" onClick={() => bulkAction('ban')} disabled={bulkActing}>
+                  {bulkActing ? <Loader2 className="size-3.5 animate-spin" /> : <Ban className="size-3.5" />} Ban Selected
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 gap-1 text-white hover:bg-white/20" onClick={() => bulkAction('unban')} disabled={bulkActing}>
+                  <ShieldCheck className="size-3.5" /> Restore Selected
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-white hover:bg-white/20" onClick={() => setSelected(new Set())}>
+                  <X className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          {/* select-all row */}
+          <div className="flex items-center gap-2 px-1">
+            <Checkbox checked={users.length > 0 && selected.size === users.length} onCheckedChange={toggleSelectAll} id="select-all" />
+            <label htmlFor="select-all" className="text-xs text-muted-foreground cursor-pointer">
+              {selected.size === 0 ? 'Select all' : `${selected.size} of ${users.length} selected`}
+            </label>
+          </div>
           {users.map((u) => {
             const st = stageLabel[u.stage] || { label: u.stage, cls: 'bg-muted text-muted-foreground' }
             return (
-              <Card key={u.id} className={`rounded-2xl transition-opacity ${u.banned ? 'opacity-60' : ''}`}>
+              <Card key={u.id} className={`rounded-2xl transition-opacity ${u.banned ? 'opacity-60' : ''} ${selected.has(u.id) ? 'ring-2 ring-primary' : ''}`}>
                 <CardContent className="flex items-center gap-3 p-3.5">
+                  <Checkbox checked={selected.has(u.id)} onCheckedChange={() => toggleSelect(u.id)} />
                   <Avatar className="size-11 border shrink-0">
                     <AvatarFallback className={`text-xs font-semibold ${u.banned ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
                       {(u.cnicName || u.name || u.email).slice(0, 2).toUpperCase()}

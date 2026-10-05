@@ -145,7 +145,7 @@ export function AppShell() {
       content = <DashboardView onNavigate={setView} onRefresh={refresh} />
       break
     case 'profile':
-      content = <ProfileView />
+      content = <ProfileView onRefresh={refresh} />
       break
     case 'my_loans':
       content = <MyLoansView onRefresh={refresh} />

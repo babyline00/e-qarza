@@ -5,12 +5,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { PageHeader } from '@/components/shared/page-header'
+import { AvatarUpload } from '@/components/shared/avatar-upload'
 import { ChangePasswordCard } from './change-password-card'
 import { ProfileEditCard } from './profile-edit-card'
 import { fmtRupees, fmtDate } from '@/lib/format'
 import { User, Mail, Phone, MapPin, Briefcase, GraduationCap, Users, IdCard, BadgeCheck } from 'lucide-react'
 
-export function ProfileView() {
+export function ProfileView({ onRefresh }: { onRefresh?: () => void }) {
   const { user, kyc } = useAppStore()
   if (!user) return null
 
@@ -47,9 +48,7 @@ export function ProfileView() {
       <Card className="mt-6 overflow-hidden rounded-2xl shadow-sm">
         <div className="bg-brand-gradient px-5 py-6 text-white">
           <div className="flex items-center gap-4">
-            <div className="grid size-16 shrink-0 place-items-center rounded-full border-2 border-white/40 bg-white/20 text-xl font-bold">
-              {initials}
-            </div>
+            <AvatarUpload onUploaded={onRefresh} />
             <div className="min-w-0">
               <h2 className="truncate text-lg font-bold">{user.name || 'User'}</h2>
               <p className="truncate text-sm text-white/85">{user.email}</p>

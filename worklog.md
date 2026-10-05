@@ -484,3 +484,75 @@ Unresolved / next-phase recommendations:
 - Loan eligibility check based on income/credit before allowing application
 - Repayment reminders via in-app notification N days before due date
 - Admin dashboard: more granular charts (repayment rate by plan, average loan size, user retention)
+
+---
+Task ID: S5-1 to S5-7 (webDevReview cron round 5)
+Agent: main
+Task: QA, add loan eligibility check, repayment reminders, profile photo upload, admin bulk user actions, dark mode toggle
+
+Work Log:
+- QA via agent-browser + VLM: dashboard stable (toast transient, chart flat due to 1 paid installment — both expected). No blocking bugs.
+- Feature: loan eligibility check (income-based)
+  * New `src/lib/eligibility.ts` — debt-to-income (DTI) check: monthly installment must be ≤40% of income, minimum income Rs 10,000; computes maxAffordableAmount
+  * Wired into `POST /api/plans/apply` — blocks application if ineligible with detailed reason
+  * New `GET /api/plans/apply?planId=` — check eligibility without applying
+  * New `EligibilityBadge` component — fetches eligibility per plan, shows green "X% DTI" badge (eligible) or red "Not eligible" badge with tooltip
+  * Added to each plan card in loan-select-view next to the amount
+  * Verified: Micro plan (DTI 0%), Premium plan (DTI 11% — both eligible with Rs 85k income)
+- Feature: repayment due-date reminders (auto notifications)
+  * Extended `src/lib/overdue.ts` — `syncOverdueStatus()` now also calls `generateDueReminders()`
+  * Generates "Installment #X Due Soon" warning notification for installments due within 3 days (one-time per installment, tracked via AdminSetting key)
+  * Generates "Installment #X Overdue" error notification for newly-overdue installments (one-time per installment)
+  * Reminders are idempotent (AdminSetting tracks sent state), run lazily on every data load
+- Feature: user profile photo upload (avatar)
+  * Added `avatarPath String?` to User schema + db:push
+  * New API `POST /api/auth/avatar` — multipart upload (2MB max, JPG/PNG/WEBP), saves with random filename, deletes old avatar
+  * New `AvatarUpload` component — circular avatar with camera overlay on hover, loading spinner, preview, click-to-upload
+  * Added `avatarPath` to `/api/me` response + store UserData type
+  * Replaced static initials circle in profile header with `<AvatarUpload onUploaded={refresh} />`
+  * Verified: VLM 9/10 (camera overlay subtle but present)
+- Feature: admin bulk user actions
+  * Added `selected Set<string>` state + `toggleSelect`, `toggleSelectAll`, `bulkAction` functions to admin-users-tab
+  * Added per-user Checkbox + "Select all" row with count label
+  * Added sticky bulk action bar (orange gradient, appears when any selected) with "Ban Selected" / "Restore Selected" / clear (X) buttons
+  * Selected users get ring-2 ring-primary highlight
+  * Bulk ban/restore iterates selected IDs, calls API per user, shows toast with success/fail count, clears selection after
+  * Verified: select 1 user → bulk bar appears with "Ban Selected" + "Restore Selected" (VLM 10/10)
+- Feature: dark mode toggle
+  * New `ThemeToggle` component — Sun/Moon icon button, uses next-themes `resolvedTheme` + `setTheme`
+  * Added to both nav modes in top-nav: simple white nav (before refresh button) + orange dashboard nav (with white text override via `[&_button]:text-white`)
+  * Dark mode CSS variables already existed in globals.css — verified working: dark background, white text, orange accents (VLM 8/10)
+  * Verified: toggle changes html class to "dark", all views render correctly in dark mode
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Eligibility API: Micro plan (DTI 0%, eligible), Premium plan (DTI 11%, eligible) — correct
+  * Profile: AvatarUpload + ThemeToggle present (VLM 9/10)
+  * Dark mode: toggle works, html class="dark", professional dark theme (VLM 8/10)
+  * Admin Users: bulk checkboxes + Select all + bulk action bar with Ban/Restore Selected (VLM 10/10)
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 5 new features added and verified: loan eligibility check (DTI-based with badges), repayment due-date reminders (auto notifications), user profile photo upload, admin bulk user actions (ban/restore multiple), dark mode toggle
+- All features respect orange E-Qarza design system + work in both light and dark modes
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has: eligibility-gated loan applications, automated repayment reminders, user avatars, bulk admin user management, and full dark mode support
+- Full lifecycle now includes income-based eligibility checks preventing over-indebtedness
+- Admin can ban/restore multiple users at once, users can personalize their profile with photos and dark mode
+- Charts, timelines, analytics, CSV exports, receipts, agreements, settlement calculator, help center, rate limiting all working
+
+Unresolved / next-phase recommendations:
+- Email/SMS notification simulation (still in-app only)
+- WebSocket real-time notifications (currently polled every 12s)
+- Unit tests for eligibility logic, overdue reminder idempotency, loan math
+- Multi-language support (Urdu locale)
+- Admin dashboard: more granular charts (repayment rate by plan, average loan size, user retention)
+- Loan application status timeline (per-application visual history of all stages)
+- Repayment forecast / early-settlement calculator improvements (already done, can enhance with penalty calc)
+- User profile photo: allow crop/resize before upload
+- Admin: filter applications/users by date range
+- Credit score system (based on repayment history)
+- Push notifications (PWA)

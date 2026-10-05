@@ -34,6 +34,7 @@ export async function GET() {
       phone: user.phone,
       role: user.role,
       stage: user.stage,
+      avatarPath: user.avatarPath,
     },
     kyc: user.kycProfile
       ? {

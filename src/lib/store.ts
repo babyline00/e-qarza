@@ -102,6 +102,7 @@ export interface UserData {
   phone: string | null
   role: string
   stage: string
+  avatarPath?: string | null
   kyc?: KycData | null
 }
 

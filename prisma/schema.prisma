@@ -21,6 +21,7 @@ model User {
   // lifecycle stage drives the SPA routing
   stage        String   @default("auth") // auth | kyc | kyc_pending | loan_select | fee_pending | fee_paid | active | rejected
   banned       Boolean  @default(false)
+  avatarPath   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
