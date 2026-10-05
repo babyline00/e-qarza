@@ -5,18 +5,26 @@ import { creditWallet } from '@/lib/wallet'
 
 async function requireAdmin() {
   const user = await getSessionUser()
-  if (!user || user.role !== 'admin') return null
-  return user
+  if (!user) return null
+  if (user.role === 'admin') return user
+  if (user.role === 'staff') {
+    const access = (user.staffAccess || '').split(',')
+    if (access.includes('payments')) return user
+  }
+  return null
 }
 
-// GET /api/admin/payment — list submitted payments awaiting verification
-export async function GET() {
+// GET /api/admin/payment?status=submitted|approved|rejected|all — list payments by status
+export async function GET(req: NextRequest) {
   const admin = await requireAdmin()
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const status = new URL(req.url).searchParams.get('status') || 'submitted'
+  const where = status === 'all' ? {} : { status }
+
   const payments = await db.payment.findMany({
-    where: { status: 'submitted' },
-    orderBy: { createdAt: 'asc' },
+    where,
+    orderBy: { createdAt: 'desc' },
     include: {
       user: { select: { id: true, email: true, name: true } },
     },

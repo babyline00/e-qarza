@@ -14,7 +14,7 @@ import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Code, MessageSquare, Save, Loader2, UserCog,
-  Plus, Trash2, Pencil, X, Shield, Check,
+  Plus, Trash2, Pencil, X, Shield, Check, ShieldCheck,
 } from 'lucide-react'
 
 interface Settings {
@@ -24,6 +24,7 @@ interface Settings {
   customHeaderEnabled: boolean
   customFooterCode: string
   customFooterEnabled: boolean
+  autoApproveKyc: boolean
 }
 
 interface StaffMember {
@@ -211,6 +212,23 @@ export function AdminSettingsTab() {
                   placeholder="<!-- Tracking pixels, additional scripts -->"
                   className="font-mono text-xs"
                   disabled={!settings.customFooterEnabled}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Auto-approve KYC toggle */}
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-5 text-primary" />
+                  <div>
+                    <Label className="text-sm font-medium">Auto-Approve KYC</Label>
+                    <p className="text-[11px] text-muted-foreground">Automatically approve all KYC submissions without admin review</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={settings.autoApproveKyc}
+                  onCheckedChange={(v) => setSettings({ ...settings, autoApproveKyc: v })}
                 />
               </div>
 

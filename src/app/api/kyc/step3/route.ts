@@ -6,6 +6,10 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Check if auto-approve KYC is enabled in admin settings
+  const autoApproveSetting = await db.adminSetting.findUnique({ where: { key: 'autoApproveKyc' } })
+  const autoApproveKyc = autoApproveSetting?.value === 'true'
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
@@ -36,8 +40,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Incomplete KYC: ${missing.join(', ')}` }, { status: 400 })
   }
 
-  // If selfie matched CNIC front → auto-approve KYC (skip admin review)
-  if (selfieMatched) {
+  // If selfie matched CNIC front OR admin has auto-approve enabled → auto-approve KYC
+  if (selfieMatched || autoApproveKyc) {
     await db.kycProfile.update({
       where: { userId: user.id },
       data: {

@@ -31,6 +31,7 @@ export async function GET() {
       customHeaderEnabled: map.customHeaderEnabled === 'true',
       customFooterCode: map.customFooterCode || '',
       customFooterEnabled: map.customFooterEnabled === 'true',
+      autoApproveKyc: map.autoApproveKyc === 'true',
     },
   })
 }
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   const updates: { key: string; value: string }[] = []
-  const fields = ['customChatCode', 'customChatEnabled', 'customHeaderCode', 'customHeaderEnabled', 'customFooterCode', 'customFooterEnabled']
+  const fields = ['customChatCode', 'customChatEnabled', 'customHeaderCode', 'customHeaderEnabled', 'customFooterCode', 'customFooterEnabled', 'autoApproveKyc']
   for (const f of fields) {
     if (body[f] !== undefined) {
       updates.push({ key: f, value: String(body[f]) })

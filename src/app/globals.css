@@ -265,11 +265,17 @@
 
 /* Smooth content transition */
 main {
-  animation: content-fade 0.2s ease-out;
+  animation: content-fade 0.15s ease-out;
 }
 @keyframes content-fade {
-  from { opacity: 0.8; }
+  from { opacity: 0.9; }
   to { opacity: 1; }
+}
+
+/* Lazy load all images by default */
+img {
+  loading: lazy;
+  decoding: async;
 }
 
 /* Focus-visible ring (accessible keyboard nav) */
