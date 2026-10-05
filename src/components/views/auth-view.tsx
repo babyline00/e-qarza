@@ -242,11 +242,9 @@ export function AuthView({ onAuthed }: Props) {
               </TabsContent>
             </Tabs>
 
-            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/70">
-              <p className="font-semibold text-foreground mb-1">Demo accounts</p>
-              <p>User: sign up with any phone number (03XXXXXXXXX) to start KYC.</p>
-              <p>Admin: phone <code className="font-mono text-primary">03000000001</code> / <code className="font-mono text-primary">admin123</code></p>
-            </div>
+            <p className="mt-4 text-center text-[11px] text-muted-foreground">
+              By continuing, you agree to our Terms of Service & Privacy Policy
+            </p>
           </CardContent>
         </Card>
       </div>

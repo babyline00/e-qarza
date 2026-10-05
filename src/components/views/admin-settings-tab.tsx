@@ -14,7 +14,7 @@ import { api } from '@/lib/api-client'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Code, MessageSquare, Save, Loader2, UserCog,
-  Plus, Trash2, Pencil, X, Shield, Check, ShieldCheck,
+  Plus, Trash2, Pencil, X, Shield, Check, ShieldCheck, Image as ImageIcon, Upload,
 } from 'lucide-react'
 
 interface Settings {
@@ -55,6 +55,8 @@ export function AdminSettingsTab() {
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loadingStaff, setLoadingStaff] = useState(true)
   const [editingStaff, setEditingStaff] = useState<Partial<StaffMember> & { password?: string } | null>(null)
+  const [logoPath, setLogoPath] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const loadSettings = useCallback(async () => {
     try {
@@ -80,7 +82,38 @@ export function AdminSettingsTab() {
   useEffect(() => {
     loadSettings()
     loadStaff()
+    // Load logo
+    api<{ logoPath: string | null }>('/api/admin/logo').then(r => setLogoPath(r.logoPath)).catch(() => {})
   }, [loadSettings, loadStaff])
+
+  async function uploadLogo(file: File | null) {
+    if (!file) return
+    if (file.size > 1024 * 1024) { toast.error('Logo too large (max 1MB)'); return }
+    setUploadingLogo(true)
+    try {
+      const fd = new FormData()
+      fd.append('logo', file)
+      const res = await fetch('/api/admin/logo', { method: 'POST', body: fd, credentials: 'same-origin' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || 'Upload failed')
+      setLogoPath(data.logoPath)
+      toast.success('Logo updated')
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  async function deleteLogo() {
+    try {
+      await api('/api/admin/logo', { method: 'DELETE' })
+      setLogoPath(null)
+      toast.success('Logo removed')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
 
   async function saveSettings() {
     if (!settings) return
@@ -138,6 +171,44 @@ export function AdminSettingsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Site Logo Upload */}
+      <Card className="rounded-2xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base"><ImageIcon className="size-4 text-primary" /> Site Logo</CardTitle>
+          <CardDescription>Upload a custom logo for your app (shown in header + footer)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="grid size-20 place-items-center rounded-xl border-2 border-dashed border-border bg-muted/30 shrink-0 overflow-hidden">
+              {logoPath ? (
+                <img src={logoPath} alt="Site logo" className="size-full object-contain p-1" />
+              ) : (
+                <ImageIcon className="size-8 text-muted-foreground/50" />
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <label className="inline-flex items-center gap-2 rounded-lg bg-brand-gradient px-4 py-2 text-sm font-semibold text-white cursor-pointer hover:opacity-90 transition">
+                {uploadingLogo ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => uploadLogo(e.target.files?.[0] || null)}
+                  disabled={uploadingLogo}
+                />
+              </label>
+              {logoPath && (
+                <Button size="sm" variant="outline" className="gap-1 text-destructive" onClick={deleteLogo}>
+                  <Trash2 className="size-3.5" /> Remove Logo
+                </Button>
+              )}
+              <p className="text-[11px] text-muted-foreground">JPG, PNG, WEBP, SVG — max 1MB</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Custom Code Settings */}
       <Card className="rounded-2xl">
         <CardHeader className="pb-3">
