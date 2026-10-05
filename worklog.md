@@ -963,3 +963,52 @@ Stage Summary:
 - All VLM ratings improved (auth 7→9, loan-select 7.5→8, mobile 7→9)
 - Consistent orange branding, improved visual hierarchy, cleaner mobile experience
 - Lint clean, no runtime errors
+
+---
+Task ID: W1-W9 (Wallet + Withdrawal System)
+Agent: main
+Task: Build digital wallet, withdrawal system, loan disbursement to wallet, admin withdrawal approval, mobile fixes
+
+Work Log:
+- New Prisma models: Wallet (userId/balance), WalletTransaction (walletId/type/amount/description/referenceId), Withdrawal (walletId/userId/amount/status/bankDetails)
+- New `src/lib/wallet.ts` — atomic wallet operations: getOrCreateWallet, creditWallet (transactional balance increment + record), debitWallet (checks sufficient balance, transactional decrement + record), getWalletBalance
+- Loan disbursement to wallet: updated admin payment approval — when processing fee is approved + loan activated, credits wallet with (loan amount - processing fee) as 'loan_disbursement' transaction + updated notification message
+- Wallet API:
+  * `GET /api/wallet` — returns wallet balance + last 50 transactions + last 20 withdrawals
+  * `POST /api/wallet/withdraw` — validates amount (min Rs 100), bank details, checks balance, debits wallet, creates pending Withdrawal request
+- Withdrawal API:
+  * `GET /api/admin/withdrawals` — lists pending withdrawals with user info (manual user lookup since no FK relation)
+  * `POST /api/admin/withdrawals` — approve (marks completed, notifies user) or reject (refunds to wallet via creditWallet, notifies user)
+- Wallet view (`wallet-view.tsx`):
+  * Orange gradient hero card with balance + "Withdraw Funds" button
+  * 3 quick stat cards: Total In / Total Out / Transactions count
+  * Pending withdrawal alert banner
+  * Transaction history (scrollable, color-coded credit/debit icons)
+  * Withdrawal request history (pending/completed/rejected badges)
+  * Withdraw modal: amount input, bank name, account number, IBAN, validation
+  * 15s auto-refresh
+- Admin Withdrawals tab (`admin-withdrawals-tab.tsx`):
+  * Lists pending withdrawals with user info + bank details
+  * Approve (green) / Reject (red) buttons
+  * 15s auto-refresh, empty state
+- Dashboard: added "Wallet" quick-action button (4-column grid on desktop, 2-column on mobile)
+- Side drawer: added "My Wallet" navigation item
+- Admin view: added "Withdrawals" tab (7th tab with ArrowUpFromLine icon)
+- Bug fix: Withdrawal model has no FK relation to User → changed from `include: { user }` to manual user lookup via findMany + Map
+- Mobile: quick-actions grid responsive (2 cols mobile, 4 cols desktop), wallet view mobile-friendly
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- agent-browser E2E:
+  * Wallet view: balance Rs 24,000, withdraw button, quick stats, transaction history (VLM 10/10)
+  * Withdrawal flow: requested Rs 5,000 to HBL → balance dropped to Rs 19,000, pending request shown
+  * Admin withdrawals: pending withdrawal card with Approve/Reject (VLM 10/10)
+  * Approval: clicked Approve → "Withdrawal approved", "No pending withdrawals"
+- Dev log: no errors after fix
+
+Stage Summary:
+- Complete digital wallet + withdrawal system built and verified end-to-end
+- Loan disbursement now goes to wallet (not just a notification)
+- Users can withdraw to bank accounts, admins approve/reject with auto-refund on rejection
+- All views mobile-responsive
+- Lint clean, no runtime errors

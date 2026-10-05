@@ -49,6 +49,7 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
       },
     },
     { label: 'My Loan', icon: FileText, onClick: () => onNavigate('my_loans') },
+    { label: 'Wallet', icon: Wallet, onClick: () => onNavigate('wallet') },
     { label: 'Notifications', icon: Bell, onClick: () => onNavigate('notifications') },
   ]
 
@@ -83,7 +84,7 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
       </div>
 
       {/* Quick actions */}
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
         {quickActions.map((a) => (
           <button
             key={a.label}

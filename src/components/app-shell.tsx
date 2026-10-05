@@ -16,6 +16,7 @@ import { MyLoansView } from '@/components/views/my-loans-view'
 import { NotificationsView } from '@/components/views/notifications-view'
 import { HelpView } from '@/components/views/help-view'
 import { TransactionsView } from '@/components/views/transactions-view'
+import { WalletView } from '@/components/views/wallet-view'
 import { AdminView } from '@/components/views/admin-view'
 import { DashboardSkeleton } from '@/components/shared/dashboard-skeleton'
 import { KeyboardShortcutsHelp } from '@/components/shared/keyboard-shortcuts-help'
@@ -166,6 +167,9 @@ export function AppShell() {
       break
     case 'transactions':
       content = <TransactionsView />
+      break
+    case 'wallet':
+      content = <WalletView />
       break
     default:
       content = <DashboardView onNavigate={setView} onRefresh={refresh} />

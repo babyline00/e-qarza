@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
+import { creditWallet } from '@/lib/wallet'
 
 async function requireAdmin() {
   const user = await getSessionUser()
@@ -112,11 +113,22 @@ export async function POST(req: NextRequest) {
           data: { status: 'active', activatedAt: new Date() },
         })
         await db.user.update({ where: { id: payment.userId }, data: { stage: 'active' } })
+
+        // Disburse loan principal to wallet (loan amount minus processing fee)
+        const disbursementAmount = app.amount - app.processingFee
+        await creditWallet(
+          payment.userId,
+          disbursementAmount,
+          'loan_disbursement',
+          `Loan disbursement: ${app.planName} plan`,
+          app.id
+        )
+
         await db.notification.create({
           data: {
             userId: payment.userId,
             title: 'Loan Activated 🎉',
-            message: `Your ${app.tenureMonths}-month loan is now active. First installment due ${installments[0]?.dueDate}. Total payable Rs ${(totalPayable / 100).toLocaleString()}.`,
+            message: `Your ${app.tenureMonths}-month loan is now active. Rs ${(disbursementAmount / 100).toLocaleString()} has been credited to your E-Qarza wallet. First installment due ${installments[0]?.dueDate}.`,
             type: 'success',
           },
         })

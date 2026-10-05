@@ -27,6 +27,7 @@ import {
   ChevronRight,
   BadgeCheck,
   ReceiptText,
+  Wallet as WalletIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/shared/theme-toggle'
@@ -200,6 +201,7 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
               />
             ))}
             <DrawerItem icon={ReceiptText} label="Transactions" active={activeView === 'transactions'} onClick={() => { onNavigate?.('transactions'); setOpen(false) }} />
+            <DrawerItem icon={WalletIcon} label="My Wallet" active={activeView === 'wallet'} onClick={() => { onNavigate?.('wallet'); setOpen(false) }} />
             {/* Help & Support */}
             <DrawerItem icon={HelpCircle} label="Help & Support" active={activeView === 'help'} onClick={() => { onNavigate?.('help'); setOpen(false) }} />
             {/* Settings (non-functional placeholder) */}

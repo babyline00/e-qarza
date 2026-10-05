@@ -10,12 +10,13 @@ import { AdminManageTab } from './admin-manage-tab'
 import { AdminUsersTab } from './admin-users-tab'
 import { AdminAnalyticsTab } from './admin-analytics-tab'
 import { AdminApplicationsTab } from './admin-applications-tab'
+import { AdminWithdrawalsTab } from './admin-withdrawals-tab'
 import { api } from '@/lib/api-client'
 import { fmtPKR, fmtDateTime } from '@/lib/format'
 import { toast } from 'sonner'
 import {
   ShieldCheck, Banknote, Check, X, Loader2, Inbox, User as UserIcon, FileImage,
-  RefreshCw, Settings, Users, BarChart3, FileText,
+  RefreshCw, Settings, Users, BarChart3, FileText, ArrowUpFromLine,
 } from 'lucide-react'
 
 interface KycItem {
@@ -147,6 +148,12 @@ export function AdminView() {
             className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
           >
             <FileText className="size-4" /> Applications
+          </TabsTrigger>
+          <TabsTrigger
+            value="withdrawals"
+            className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+          >
+            <ArrowUpFromLine className="size-4" /> Withdrawals
           </TabsTrigger>
           <TabsTrigger
             value="manage"
@@ -347,6 +354,11 @@ export function AdminView() {
         {/* Applications */}
         <TabsContent value="applications" className="mt-4">
           <AdminApplicationsTab />
+        </TabsContent>
+
+        {/* Withdrawals */}
+        <TabsContent value="withdrawals" className="mt-4">
+          <AdminWithdrawalsTab />
         </TabsContent>
 
         {/* Manage plans + banks */}

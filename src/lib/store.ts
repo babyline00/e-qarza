@@ -16,6 +16,7 @@ export type View =
   | 'notifications'
   | 'help'
   | 'transactions'
+  | 'wallet'
 
 export interface KycData {
   status: string
