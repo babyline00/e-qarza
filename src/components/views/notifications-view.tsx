@@ -58,7 +58,7 @@ export function NotificationsView() {
       </PageHeader>
 
       <div className="mt-6 space-y-3">
-        {notifications.map((n) => {
+        {notifications.map((n, idx) => {
           const circleClass =
             n.type === 'success' ? 'bg-success/10 text-success' :
             n.type === 'error' ? 'bg-destructive/10 text-destructive' :
@@ -70,7 +70,8 @@ export function NotificationsView() {
           return (
             <Card
               key={n.id}
-              className={`rounded-2xl shadow-sm transition ${!n.read ? 'border-primary/40 bg-primary/5' : ''}`}
+              className={`animate-stagger rounded-2xl shadow-sm transition hover-lift ${!n.read ? 'border-primary/40 bg-primary/5' : ''}`}
+              style={{ ['--i' as string]: String(Math.min(idx, 8)) }}
             >
               <CardContent className="flex gap-3 p-4">
                 <span className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-full ${circleClass}`}>

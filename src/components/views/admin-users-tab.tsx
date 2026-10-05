@@ -10,7 +10,7 @@ import { api } from '@/lib/api-client'
 import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import {
-  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle,
+  Search, Loader2, Ban, ShieldCheck, Trash2, Users as UsersIcon, AlertTriangle, Download,
 } from 'lucide-react'
 
 interface UserItem {
@@ -80,15 +80,20 @@ export function AdminUsersTab() {
 
   return (
     <div className="space-y-4">
-      {/* search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, email, or phone…"
-          className="pl-9 rounded-xl"
-        />
+      {/* search + export */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, email, or phone…"
+            className="pl-9 rounded-xl"
+          />
+        </div>
+        <Button variant="outline" size="sm" className="gap-1.5 shrink-0" onClick={() => window.open('/api/admin/export?type=users', '_blank')}>
+          <Download className="size-3.5" /> CSV
+        </Button>
       </div>
 
       {/* summary */}

@@ -72,19 +72,19 @@ export function RepaymentChart({ application }: Props) {
           <AreaChart data={data} margin={{ top: 5, right: 8, left: -8, bottom: 0 }}>
             <defs>
               <linearGradient id="repayGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="oklch(0.70 0.19 45)" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="oklch(0.70 0.19 45)" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="#F97316" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#F97316" stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.005 60)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11, fill: 'oklch(0.52 0.015 40)' }}
+              tick={{ fontSize: 11, fill: '#6B7280' }}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fontSize: 10, fill: 'oklch(0.52 0.015 40)' }}
+              tick={{ fontSize: 10, fill: '#6B7280' }}
               tickLine={false}
               axisLine={false}
               width={48}
@@ -93,7 +93,7 @@ export function RepaymentChart({ application }: Props) {
             <Tooltip
               contentStyle={{
                 borderRadius: 8,
-                border: '1px solid oklch(0.92 0.005 60)',
+                border: '1px solid #E5E7EB',
                 fontSize: 12,
                 padding: '4px 8px',
               }}
@@ -103,11 +103,12 @@ export function RepaymentChart({ application }: Props) {
             <Area
               type="monotone"
               dataKey="cumulative"
-              stroke="oklch(0.70 0.19 45)"
+              stroke="#F97316"
               strokeWidth={2.5}
               fill="url(#repayGrad)"
-              dot={{ r: 3, fill: 'oklch(0.70 0.19 45)', strokeWidth: 0 }}
+              dot={{ r: 3, fill: '#F97316', strokeWidth: 0 }}
               activeDot={{ r: 5 }}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>

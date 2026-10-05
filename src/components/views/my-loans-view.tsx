@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/shared/page-header'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
 import { ReceiptModal } from '@/components/shared/receipt-modal'
 import { AgreementModal } from '@/components/shared/agreement-modal'
+import { ApplicationTimeline } from './application-timeline'
 import { fmtPKR, fmtDate, loanTotals, fmtDateTime } from '@/lib/format'
 import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt, AlertCircle, Wallet, Download, FileText } from 'lucide-react'
 
@@ -57,7 +58,8 @@ export function MyLoansView({ onRefresh }: Props) {
             { label: 'Processing fee', value: fmtPKR(app.processingFee) },
           ]
           return (
-            <Card key={app.id} className="overflow-hidden rounded-2xl shadow-sm">
+            <div key={app.id} className="space-y-3">
+            <Card className="overflow-hidden rounded-2xl shadow-sm">
               {/* Header */}
               <div className="flex flex-wrap items-start justify-between gap-2 border-b px-5 py-4">
                 <div className="flex items-center gap-3">
@@ -182,8 +184,14 @@ export function MyLoansView({ onRefresh }: Props) {
                 )}
               </CardContent>
             </Card>
-          )
-        })}
+
+            {/* Application timeline */}
+            <div className="mt-3">
+              <ApplicationTimeline app={app} />
+            </div>
+          </div>
+        )
+      })}
       </div>
 
       <InstallmentPaymentDialog

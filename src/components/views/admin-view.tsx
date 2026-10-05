@@ -9,12 +9,13 @@ import { PageHeader } from '@/components/shared/page-header'
 import { AdminManageTab } from './admin-manage-tab'
 import { AdminUsersTab } from './admin-users-tab'
 import { AdminAnalyticsTab } from './admin-analytics-tab'
+import { AdminApplicationsTab } from './admin-applications-tab'
 import { api } from '@/lib/api-client'
 import { fmtPKR, fmtDateTime } from '@/lib/format'
 import { toast } from 'sonner'
 import {
   ShieldCheck, Banknote, Check, X, Loader2, Inbox, User as UserIcon, FileImage,
-  RefreshCw, Settings, Users, BarChart3,
+  RefreshCw, Settings, Users, BarChart3, FileText,
 } from 'lucide-react'
 
 interface KycItem {
@@ -139,6 +140,12 @@ export function AdminView() {
             {payments.length > 0 && (
               <Badge className="ml-1 h-5 border-0 bg-primary text-primary-foreground text-[10px]">{payments.length}</Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="applications"
+            className="gap-2 rounded-lg data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+          >
+            <FileText className="size-4" /> Applications
           </TabsTrigger>
           <TabsTrigger
             value="manage"
@@ -334,6 +341,11 @@ export function AdminView() {
               </Card>
             ))
           )}
+        </TabsContent>
+
+        {/* Applications */}
+        <TabsContent value="applications" className="mt-4">
+          <AdminApplicationsTab />
         </TabsContent>
 
         {/* Manage plans + banks */}

@@ -9,7 +9,7 @@ import { fmtPKR } from '@/lib/format'
 import { toast } from 'sonner'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, Legend, PieChart, Pie, Cell,
+  LineChart, Line, Legend, PieChart, Pie,
 } from 'recharts'
 import {
   Users, ShieldCheck, CreditCard, Banknote, TrendingUp, Wallet, Clock, RefreshCw,
@@ -33,7 +33,16 @@ interface Stats {
   paymentStatus: { approved: number; submitted: number; rejected: number }
 }
 
-const PIE_COLORS = ['oklch(0.62 0.17 150)', 'oklch(0.70 0.19 45)', 'oklch(0.58 0.22 25)']
+// hex colors (recharts SVG attributes don't reliably support oklch())
+const C = {
+  orange: '#F97316',
+  green: '#10B981',
+  red: '#EF4444',
+  blue: '#3B82F6',
+  gray: '#6B7280',
+  border: '#E5E7EB',
+}
+const PIE_COLORS = [C.green, C.orange, C.red]
 
 export function AdminAnalyticsTab() {
   const [stats, setStats] = useState<Stats | null>(null)
@@ -148,14 +157,14 @@ export function AdminAnalyticsTab() {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyTrend} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.005 60)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'oklch(0.52 0.015 40)' }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'oklch(0.52 0.015 40)' }} tickLine={false} axisLine={false} width={32} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'oklch(0.52 0.015 40)' }} tickLine={false} axisLine={false} width={48} tickFormatter={(v: number) => `${(v / 100000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid oklch(0.92 0.005 60)', fontSize: 12 }} formatter={(val: number, name: string) => name === 'Disbursed' ? [fmtPKR(val), 'Disbursed'] : [val, 'Applications']} />
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: C.gray }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: C.gray }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: C.gray }} tickLine={false} axisLine={false} width={48} tickFormatter={(v: number) => `${(v / 100000).toFixed(0)}k`} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }} formatter={(val: number, name: string) => name === 'Disbursed' ? [fmtPKR(val), 'Disbursed'] : [val, 'Applications']} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line yAxisId="left" type="monotone" dataKey="apps" name="Applications" stroke="oklch(0.60 0.13 240)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                <Line yAxisId="right" type="monotone" dataKey="disbursed" name="Disbursed" stroke="oklch(0.70 0.19 45)" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                <Line yAxisId="left" type="monotone" dataKey="apps" name="Applications" stroke={C.blue} strokeWidth={2} dot={{ r: 3, fill: C.blue }} activeDot={{ r: 5 }} isAnimationActive={false} />
+                <Line yAxisId="right" type="monotone" dataKey="disbursed" name="Disbursed" stroke={C.orange} strokeWidth={2.5} dot={{ r: 3, fill: C.orange }} activeDot={{ r: 5 }} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -173,11 +182,11 @@ export function AdminAnalyticsTab() {
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byPlan} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.92 0.005 60)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'oklch(0.52 0.015 40)' }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: 'oklch(0.52 0.015 40)' }} tickLine={false} axisLine={false} width={40} tickFormatter={(v: number) => `${(v / 100000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid oklch(0.92 0.005 60)', fontSize: 12 }} formatter={(val: number) => [fmtPKR(val), 'Amount']} />
-                  <Bar dataKey="amount" fill="oklch(0.70 0.19 45)" radius={[6, 6, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.gray }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: C.gray }} tickLine={false} axisLine={false} width={40} tickFormatter={(v: number) => `${(v / 100000).toFixed(0)}k`} allowDecimals={false} />
+                  <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }} formatter={(val: number) => [fmtPKR(val), 'Amount']} />
+                  <Bar dataKey="amount" fill={C.orange} radius={[6, 6, 0, 0]} isAnimationActive={false} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -194,12 +203,18 @@ export function AdminAnalyticsTab() {
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}>
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid oklch(0.92 0.005 60)', fontSize: 12 }} />
+                  <Pie
+                    data={pieData.map((d, i) => ({ ...d, fill: PIE_COLORS[i % PIE_COLORS.length] }))}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={2}
+                    isAnimationActive={false}
+                  />
+                  <Tooltip contentStyle={{ borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>

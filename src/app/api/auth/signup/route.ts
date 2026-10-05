@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword, verifyPassword, setSession, getSessionUser } from '@/lib/auth'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
+  // rate limit: 8 signups per IP per minute
+  const ip = getClientIP(req)
+  const rl = checkRateLimit(ip)
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Too many attempts. Try again in ${rl.retryAfter}s.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    )
+  }
+
   let body: Record<string, unknown>
   try {
     body = await req.json()

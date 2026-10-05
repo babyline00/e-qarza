@@ -405,3 +405,82 @@ Unresolved / next-phase recommendations:
 - Loan application status timeline (visual history of each application's stages)
 - Admin: export users/payments/analytics to CSV
 - Multi-language support (Urdu locale)
+
+---
+Task ID: S4-1 to S4-7 (webDevReview cron round 4)
+Agent: main
+Task: QA (chart rendering bug), add application timeline, admin reject applications, CSV export, rate limiting, styling polish
+
+Work Log:
+- QA via agent-browser + VLM: admin analytics charts appeared empty — investigated root cause
+- Bug fix: charts not rendering (3 root causes found + fixed)
+  * Root cause 1: recharts SVG attributes don't reliably support oklch() color values → replaced all oklch colors in admin-analytics-tab.tsx + repayment-chart.tsx with hex equivalents (#F97316 orange, #10B981 green, #EF4444 red, #3B82F6 blue, #6B7280 gray, #E5E7EB border)
+  * Root cause 2: recharts default animations don't complete in headless/browser → added isAnimationActive={false} to all Bar, Pie, Line, Area components
+  * Root cause 3: Pie chart <Cell> children weren't getting fill applied → changed to embed fill directly in data objects: data={pieData.map((d, i) => ({ ...d, fill: PIE_COLORS[i] }))}
+  * Also added allowDecimals={false} to Y-axes to prevent faint decimal labels
+  * Verified via DOM inspection: line path has valid d with October spike, bar has orange path with rgb(249,115,22), pie sectors have green+orange fills
+  * VLM confirmed all 3 charts render: line chart (blue+orange spike), bar chart (orange Essential bar), donut (green Approved + orange Submitted)
+- Feature: loan application status timeline
+  * New `application-timeline.tsx` — vertical timeline showing 5 stages: Application Submitted → Processing Fee Submitted → Processing Fee Verified → Loan Activated → Installments Repaid
+  * Each stage shows completed/active/pending/rejected state with colored icon circles + date badges + descriptions
+  * Derives status from app.feePayment, app.activatedAt, app.installments
+  * Added to My Loans view below each application card (wrapped in div for proper JSX structure)
+  * Verified: all 5 stages render with correct statuses (VLM 10/10)
+- Feature: admin reject loan application flow
+  * New API `GET/POST /api/admin/applications` — list all applications with user info, reject with reason (resets user to loan_select stage + sends notification), approve override for fee_pending
+  * New `admin-applications-tab.tsx` — application cards with plan/user/date/amount/status/installment progress, Reject button for fee_pending/fee_submitted apps, reject dialog with reason textarea, 15s polling
+  * Added "Applications" tab (6th admin tab) with FileText icon
+  * Verified: shows 3 applications with correct statuses, Export CSV button (VLM 10/10)
+- Feature: CSV export
+  * New API `GET /api/admin/export?type=users|payments|applications` — generates CSV with proper escaping, Content-Type, and Content-Disposition headers
+  * Users CSV: ID/Name/Email/Phone/Stage/Banned/KYC Status/KYC Name/City/Applications/Joined
+  * Payments CSV: ID/User/Email/Type/Amount/Status/TxnRef/Plan/Created/Reviewed
+  * Applications CSV: ID/User/Email/Plan/Amount/Rate/Tenure/Fee/Status/Applied/Activated
+  * Added "CSV" export button to admin Users tab + "Export CSV" button to admin Applications tab
+  * Verified: CSV downloads correctly with headers + data rows
+- Feature: rate limiting on auth endpoints
+  * New `src/lib/rate-limit.ts` — in-memory sliding-window rate limiter (8 attempts per IP per minute), auto-cleanup every 5 min
+  * Applied to `/api/auth/login` and `/api/auth/signup` — returns 429 with Retry-After header when limit exceeded
+  * Extracts client IP from x-forwarded-for or x-real-ip headers
+- Styling polish
+  * New CSS: `animate-stagger` (staggered list entrance with --i CSS var delay), `animate-scale-in` (modal entrance)
+  * Applied staggered animation to notifications list (each card fades in with 60ms delay)
+  * Added hover-lift to notification cards
+  * Applied hover-lift to admin application cards
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Admin Analytics: all 3 charts now render with visible data (VLM confirmed line/bar/donut)
+  * Admin Applications tab: 6th tab works, shows all apps with reject + CSV export (VLM 10/10)
+  * My Loans: Application Timeline renders with 5 stages (VLM 10/10)
+  * CSV export: returns proper CSV with headers + data
+  * Rate limiting: applied to login/signup (returns 429 when exceeded)
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 1 critical bug fixed (charts not rendering — 3 root causes: oklch colors, animations, pie fill)
+- 4 new features added: application status timeline, admin reject applications, CSV export (users/payments/applications), rate limiting on auth
+- Styling polish: staggered list animations, modal scale-in, hover-lift on more cards
+- All features respect orange E-Qarza design system
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has 6 admin tabs (Analytics → KYC → Payments → Applications → Manage → Users) with full CRUD + CSV export
+- Users see application timelines on My Loans, can edit profiles, view transaction history, download receipts, settle early, view loan agreements
+- Charts render correctly with hex colors + disabled animations
+- Auth endpoints are rate-limited against brute force
+- Admin can reject loan applications with reasons
+
+Unresolved / next-phase recommendations:
+- Email/SMS notification simulation (still in-app only)
+- WebSocket real-time notifications (currently polled every 12s)
+- Automated overdue reminder notifications (cron job — currently lazy on data load)
+- Unit tests for loan math, settlement calc, overdue sync, analytics aggregation, rate limiting
+- Dark mode polish (variables exist but untested in dark)
+- User profile photo upload (avatar currently shows initials only)
+- Multi-language support (Urdu locale)
+- Admin: bulk user actions (ban multiple, export filtered)
+- Loan eligibility check based on income/credit before allowing application
+- Repayment reminders via in-app notification N days before due date
+- Admin dashboard: more granular charts (repayment rate by plan, average loan size, user retention)
