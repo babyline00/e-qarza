@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { FileUpload } from '@/components/shared/file-upload'
 import { fmtPKR, loanTotals } from '@/lib/format'
 import { api } from '@/lib/api-client'
@@ -18,6 +19,9 @@ import {
   ShieldCheck,
   Percent,
   Wallet,
+  Info,
+  Smartphone,
+  Landmark,
 } from 'lucide-react'
 
 interface Props {
@@ -30,6 +34,16 @@ export function FeePaymentView({ onSubmitted }: Props) {
   const [txnRef, setTxnRef] = useState('')
   const [proof, setProof] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showFeePopup, setShowFeePopup] = useState(false)
+
+  // Show the First Payment popup on mount
+  useEffect(() => {
+    const seen = sessionStorage.getItem('feePopupShown')
+    if (!seen) {
+      setShowFeePopup(true)
+      sessionStorage.setItem('feePopupShown', '1')
+    }
+  }, [])
 
   if (!app) {
     return (
@@ -49,7 +63,7 @@ export function FeePaymentView({ onSubmitted }: Props) {
   }
 
   async function submit() {
-    if (!txnRef.trim()) return toast.error('Enter the transaction reference')
+    // txnRef is optional now
     if (!proof) return toast.error('Upload the payment proof screenshot')
     setLoading(true)
     try {
@@ -177,7 +191,7 @@ export function FeePaymentView({ onSubmitted }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="txnRef">Transaction Reference / TID</Label>
+            <Label htmlFor="txnRef">Transaction Reference / TID <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <Input
               id="txnRef"
               value={txnRef}
@@ -212,6 +226,75 @@ export function FeePaymentView({ onSubmitted }: Props) {
           </p>
         </CardContent>
       </Card>
+
+      {/* First Payment Popup — Processing Fee info in Urdu + English */}
+      <Dialog open={showFeePopup} onOpenChange={setShowFeePopup}>
+        <DialogContent className="max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <span className="grid size-12 place-items-center rounded-xl bg-brand-gradient text-white">
+                <Wallet className="size-6" />
+              </span>
+              <div>
+                <DialogTitle className="text-lg">First Payment (Processing Fee)</DialogTitle>
+                <DialogDescription>پہلی ادائیگی (پروسیسنگ فیس)</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-xl bg-brand-gradient p-4 text-white text-center">
+              <p className="text-xs uppercase tracking-wide opacity-90">Amount to Pay</p>
+              <p className="text-3xl font-extrabold mt-1">{fmtPKR(app.processingFee)}</p>
+              <p className="text-xs opacity-80 mt-1">ادائیگی کی رقم</p>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <Info className="size-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Pay the processing fee to activate your loan.</p>
+                  <p className="text-xs text-muted-foreground">اپنا قرض فعال کرنے کے لیے پروسیسنگ فیس ادا کریں۔</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Landmark className="size-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Transfer to any active bank account below.</p>
+                  <p className="text-xs text-muted-foreground">نیچے دیے گئے کسی بھی بینک اکاؤنٹ میں رقم منتقل کریں۔</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Smartphone className="size-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">JazzCash, EasyPaisa & bank transfer accepted.</p>
+                  <p className="text-xs text-muted-foreground">جاز کیش، ایزی پیسہ اور بینک ٹرانسفر قبول ہیں۔</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="size-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Upload payment screenshot after transfer.</p>
+                  <p className="text-xs text-muted-foreground">منتقلی کے بعد ادائیگی کا اسکرین شارٹ اپ لوڈ کریں۔</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-3 text-center">
+              <p className="text-xs text-muted-foreground">
+                Loan amount: <strong className="text-foreground">{fmtPKR(app.amount)}</strong> will be credited to your wallet after verification.
+              </p>
+              <p className="text-[11px] text-muted-foreground/70 mt-1">
+                قرض کی رقم تصدیق کے بعد آپ کے والٹ میں جمع ہو جائے گی۔
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button className="w-full bg-brand-gradient text-white hover:opacity-90" onClick={() => setShowFeePopup(false)}>
+              Got it / سمجھ گیا
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -32,7 +32,7 @@ export function InstallmentPaymentDialog({ installment, onClose, onPaid }: Props
 
   async function submit() {
     if (!installment) return
-    if (!txnRef.trim()) return toast.error('Enter the transaction reference')
+    // txnRef is optional now
     if (!proof) return toast.error('Upload the payment proof')
     setLoading(true)
     try {
@@ -70,7 +70,7 @@ export function InstallmentPaymentDialog({ installment, onClose, onPaid }: Props
             Transfer the exact amount to the bank account shown on your processing-fee screen, then upload the receipt below.
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ins-txn">Transaction Reference / TID</Label>
+            <Label htmlFor="ins-txn">Transaction Reference / TID <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <Input id="ins-txn" value={txnRef} onChange={(e) => setTxnRef(e.target.value)} placeholder="e.g. FT2501011234567" />
           </div>
           <FileUpload label="Payment Proof" hint="Screenshot or receipt" onChange={setProof} value={proof} />

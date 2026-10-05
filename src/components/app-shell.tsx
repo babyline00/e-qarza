@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useAppStore } from '@/lib/store'
 import { resolveView } from '@/lib/router'
 import { api } from '@/lib/api-client'
@@ -25,6 +25,7 @@ import { TopNav } from '@/components/layout/top-nav'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { Footer } from '@/components/layout/footer'
 import { useKeyboardShortcuts } from '@/lib/use-keyboard-shortcuts'
+import { playNotificationSound } from '@/lib/sound'
 import { Loader2 } from 'lucide-react'
 
 interface MeResponse {
@@ -49,6 +50,9 @@ export function AppShell() {
     setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setCredit, setLoading, setView, logout,
   } = useAppStore()
 
+  const prevNotifCount = useRef(0)
+  const isFirstRefresh = useRef(true)
+
   const refresh = useCallback(async () => {
     try {
       const data = await api<MeResponse>('/api/me')
@@ -59,6 +63,15 @@ export function AppShell() {
       setBankDetails(data.banks as never)
       setPlans(data.plans as never)
       setCredit((data as { credit?: unknown }).credit as never)
+
+      // Play sound when new unread notifications arrive (skip first load)
+      const unreadCount = (data.notifications as { read: boolean }[]).filter(n => !n.read).length
+      if (!isFirstRefresh.current && data.user && unreadCount > prevNotifCount.current) {
+        playNotificationSound()
+      }
+      prevNotifCount.current = unreadCount
+      isFirstRefresh.current = false
+
       if (!data.user) setView('auth')
     } catch {
       // ignore — keep current state
@@ -129,6 +142,8 @@ export function AppShell() {
   const autoView = resolveView(user.stage, kyc?.status as string | undefined, latestApp?.status)
   // active users can navigate freely among dashboard views
   const view = user.stage === 'active' ? (activeView === 'auth' ? 'dashboard' : activeView) : autoView
+  // Lock navigation when waiting for admin approval — user cannot leave the waiting screen
+  const isLocked = user.stage === 'kyc_pending' || user.stage === 'fee_pending' || view === 'kyc_pending' || view === 'fee_pending'
 
   let content: React.ReactNode = null
   switch (view) {
@@ -178,11 +193,11 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <TopNav onLogout={handleLogout} onRefresh={refresh} onNavigate={setView} activeView={view} />
+      <TopNav onLogout={handleLogout} onRefresh={refresh} onNavigate={isLocked ? undefined : setView} activeView={view} />
       <main id="main-content" className="flex-1 pb-16 md:pb-0">{content}</main>
-      <Footer />
-      <BottomNav onNavigate={setView} activeView={view} />
-      <KeyboardShortcutsHelp />
+      {!isLocked && <Footer />}
+      {!isLocked && <BottomNav onNavigate={setView} activeView={view} />}
+      {!isLocked && <KeyboardShortcutsHelp />}
       <OnboardingTour />
     </div>
   )

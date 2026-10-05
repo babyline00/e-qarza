@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const file = formData.get('proofImage')
 
   if (!installmentId) return NextResponse.json({ error: 'installmentId required' }, { status: 400 })
-  if (!txnRef) return NextResponse.json({ error: 'Transaction reference is required' }, { status: 400 })
+  // txnRef is now optional
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: 'Payment proof image is required' }, { status: 400 })
   }

@@ -1225,3 +1225,62 @@ Stage Summary:
 - Footer: darker text for accessibility
 - Auth: clear tab contrast, orange-tinted demo box
 - Lint clean, no runtime errors
+
+---
+Task ID: T1-T6 (Txn Ref Optional, Fee Popup, Multiple Banks, Lock Screen, Notification Sound)
+Agent: main
+Task: Make txn ref optional, add first payment popup (Urdu/English), show all active banks, lock waiting screens, add notification sounds
+
+Work Log:
+- Fix: Transaction Reference now optional
+  * Removed required validation from POST /api/payments/proof (txnRef)
+  * Removed required validation from POST /api/payments/installment (txnRef)
+  * Updated fee-payment-view: label shows "(optional)", removed client-side required check
+  * Updated installment-payment-dialog: label shows "(optional)", removed client-side required check
+- Feature: First Payment popup (Processing Fee info in Urdu + English)
+  * Auto-shows on first visit to fee payment screen (sessionStorage tracks)
+  * Orange gradient header with wallet icon + "First Payment (Processing Fee)" + Urdu "پہلی ادائیگی (پروسیسنگ فیس)"
+  * Orange gradient amount box showing processing fee + Urdu "ادائیگی کی رقم"
+  * 4 info points in English + Urdu:
+    1. Pay processing fee to activate loan / اپنا قرض فعال کرنے کے لیے پروسیسنگ فیس ادا کریں
+    2. Transfer to any active bank account / نیچے دیے گئے کسی بھی بینک اکاؤنٹ میں رقم منتقل کریں
+    3. JazzCash, EasyPaisa & bank transfer accepted / جاز کیش، ایزی پیسہ اور بینک ٹرانسفر قبول ہیں
+    4. Upload payment screenshot / منتقلی کے بعد ادائیگی کا اسکرین شارٹ اپ لوڈ کریں
+  * Footer: loan amount will be credited to wallet after verification + Urdu translation
+  * "Got it / سمجھ گیا" button to dismiss
+  * showCloseButton={false} (must read and click Got it)
+  * Verified: VLM 10/10
+- Feature: Multiple active banks (JazzCash, EasyPaisa, HBL)
+  * Added JazzCash (03009999999) and EasyPaisa (03459999999) to BankDetail table
+  * Fee payment screen now shows all 3 payment options: HBL, JazzCash, EasyPaisa
+  * Each with copy-to-clipboard for account number + IBAN
+- Fix: Lock user on waiting screens (no navigation)
+  * Added `isLocked` flag: true when stage is kyc_pending or fee_pending
+  * When locked: TopNav onNavigate=undefined (no nav), BottomNav hidden, Footer hidden, KeyboardShortcutsHelp hidden
+  * User cannot leave the waiting screen until admin approves/rejects
+  * Only Refresh + Logout buttons remain available
+- Feature: Notification sound system
+  * New `src/lib/sound.ts` — Web Audio API beep generator (no external files needed):
+    - playNotificationSound(): two-tone ascending beep (C5 → E5)
+    - playSuccessSound(): three-tone ascending (C5 → E5 → G5)
+  * New `src/lib/use-notification-sound.ts` — admin notification sound hook:
+    - Polls /api/admin/kyc + /api/admin/payment every 10s
+    - Tracks known IDs, plays sound when new items appear
+    - Skips first load (doesn't play on initial page load)
+  * Admin view: useNotificationSound(true, 10000) — plays sound when new KYC/payment arrives
+  * User side: AppShell tracks unread notification count, plays sound when count increases
+  * Uses useRef to track previous count, skips first refresh
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- agent-browser E2E:
+  * Fee popup: shows Urdu+English text, orange gradient amount, JazzCash/EasyPaisa mentioned, "Got it" button (VLM 10/10)
+  * Transaction Reference: shows "(optional)" label ✓
+  * Multiple banks: HBL, JazzCash, EasyPaisa all visible on fee payment screen ✓
+  * Lock screen: user on fee_pending stage — no bottom nav, no footer (locked) ✓
+- Dev log: no errors
+
+Stage Summary:
+- 5 features/fixes: txn ref optional, first payment popup (bilingual Urdu/English), multiple banks (JazzCash/EasyPaisa/HBL), locked waiting screens, notification sound system
+- All API + frontend changes complete
+- Lint clean, no runtime errors

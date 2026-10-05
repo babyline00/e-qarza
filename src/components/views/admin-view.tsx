@@ -11,6 +11,7 @@ import { AdminAnalyticsTab } from './admin-analytics-tab'
 import { AdminApplicationsTab } from './admin-applications-tab'
 import { AdminWithdrawalsTab } from './admin-withdrawals-tab'
 import { AdminSettingsTab } from './admin-settings-tab'
+import { useNotificationSound } from '@/lib/use-notification-sound'
 import { api } from '@/lib/api-client'
 import { fmtPKR, fmtDateTime } from '@/lib/format'
 import { toast } from 'sonner'
@@ -67,6 +68,9 @@ export function AdminView() {
   const [activeTab, setActiveTab] = useState('analytics')
   const [acting, setActing] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Play sound when new KYC/payment submissions arrive
+  useNotificationSound(true, 10000)
 
   // determine accessible tabs based on role
   const isStaff = user?.role === 'staff'
