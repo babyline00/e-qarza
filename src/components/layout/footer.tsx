@@ -12,7 +12,7 @@ export function Footer() {
             <span className="flex items-center gap-1"><Zap className="size-3 text-primary" /> Instant approval</span>
           </div>
         </div>
-        <p className="mt-3 text-center text-[10px] text-muted-foreground/70">
+        <p className="mt-3 text-center text-[11px] text-foreground/60">
           © 2026 E-Qarza. For demonstration only. Not a real financial product.
         </p>
       </div>

@@ -116,13 +116,13 @@ export function AuthView({ onAuthed }: Props) {
               <TabsList className="grid w-full grid-cols-2 mb-5 rounded-lg bg-muted p-1">
                 <TabsTrigger
                   value="login"
-                  className="rounded-md text-sm font-medium data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+                  className="rounded-md text-sm font-semibold text-muted-foreground data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/60"
                 >
                   Login
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
-                  className="rounded-md text-sm font-medium data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm"
+                  className="rounded-md text-sm font-semibold text-muted-foreground data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/60"
                 >
                   Sign Up
                 </TabsTrigger>
@@ -242,10 +242,10 @@ export function AuthView({ onAuthed }: Props) {
               </TabsContent>
             </Tabs>
 
-            <div className="mt-4 rounded-lg border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/70">
               <p className="font-semibold text-foreground mb-1">Demo accounts</p>
               <p>User: sign up with any phone number (03XXXXXXXXX) to start KYC.</p>
-              <p>Admin: phone <code className="font-mono">03000000001</code> / <code className="font-mono">admin123</code></p>
+              <p>Admin: phone <code className="font-mono text-primary">03000000001</code> / <code className="font-mono text-primary">admin123</code></p>
             </div>
           </CardContent>
         </Card>
