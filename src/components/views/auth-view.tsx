@@ -79,10 +79,14 @@ export function AuthView({ onAuthed }: Props) {
 
         <Card className="rounded-2xl border-none shadow-xl shadow-primary/5">
           <CardContent className="p-6 sm:p-8">
-            {/* Welcome heading */}
+            {/* Welcome heading — no duplicate tagline (already shown under logo) */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome to E-Qarza</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Quick • Secure • Reliable Loans</p>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {mode === 'login' ? 'Sign in to manage your loans' : 'Start your loan journey in minutes'}
+              </p>
             </div>
 
             <Tabs value={mode} onValueChange={(v) => setMode(v as 'login' | 'signup')}>

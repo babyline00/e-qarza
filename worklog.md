@@ -932,3 +932,34 @@ Stage Summary:
 - Made Tabs controlled for programmatic navigation
 - All features respect orange E-Qarza design system
 - Lint clean, no runtime errors
+
+---
+Task ID: U1-U7 (UI/UX Design Polish)
+Agent: main
+Task: QA all views via VLM, plan + fix UI/UX issues across auth, loan-select, footer, mobile
+
+Work Log:
+- QA via agent-browser + VLM on auth, dashboard, loan-select, mobile (390px)
+- Issues found:
+  * Auth: duplicate tagline ("Quick • Secure • Reliable Loans" appeared twice), low tab contrast, static heading
+  * Loan-select: cramped inline fee text, no clear CTA ("Select" missing), tight spacing before "How it works"
+  * Footer: too many trust chips (3), heavy visual weight, copyright text too prominent
+  * Mobile: card text density, fee display cramped, touch target concerns
+- Fixes applied:
+  * Auth: removed duplicate tagline, made heading dynamic ("Welcome Back" for login / "Create Account" for signup) with contextual subtitle, kept tabs with brand-gradient active state
+  * Loan-select: simplified meta line (months + name + monthly on one line), moved fee to a dedicated green badge (bg-success/10) with strikethrough + discount %, added "Select" text + orange chevron as clear CTA (hidden on mobile, shown on sm+), added mt-6 spacing before "How it works"
+  * Footer: reduced from 3 trust chips to 2 (Bank-grade encryption + Instant approval), smaller text (text-[11px]), lighter copyright (text-[10px] text-muted-foreground/70), tighter padding
+  * Global CSS: added .card-shadow + .card-shadow-md utilities for consistent shadows, mobile touch target min-height (40px for buttons without size classes)
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- VLM assessments:
+  * Auth page: 9/10 (single tagline, dynamic heading, clear tabs, clean footer)
+  * Loan-select: 8/10 (Select CTA visible, fee badge clean, proper spacing)
+  * Mobile (390px): 9/10 (full-width cards, readable text, no horizontal scroll, clean fee badge)
+
+Stage Summary:
+- 3 views fixed (auth, loan-select, footer) + global CSS polish
+- All VLM ratings improved (auth 7→9, loan-select 7.5→8, mobile 7→9)
+- Consistent orange branding, improved visual hierarchy, cleaner mobile experience
+- Lint clean, no runtime errors

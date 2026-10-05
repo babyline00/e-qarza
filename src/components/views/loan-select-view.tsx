@@ -144,22 +144,24 @@ export function LoanSelectView({ onApplied }: Props) {
                     <EligibilityBadge planId={plan.id} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {plan.tenureMonths} Months &middot; {plan.name}
+                    {plan.tenureMonths} Months &middot; {plan.name} &middot; Monthly &asymp; {fmtPKR(t.monthlyInstallment)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Monthly &asymp; {fmtPKR(t.monthlyInstallment)}
+                  <div className="mt-1 flex items-center gap-1.5">
                     {plan.discountPct && plan.originalProcessingFee ? (
-                      <span className="ml-1.5 text-success font-medium">
-                        • Fee {fmtPKR(plan.processingFee)}{' '}
-                        <span className="line-through opacity-60">{fmtPKR(plan.originalProcessingFee)}</span>{' '}
-                        (-{plan.discountPct}%)
+                      <span className="inline-flex items-center gap-1 rounded-md bg-success/10 px-1.5 py-0.5 text-[11px] font-medium text-success">
+                        Fee {fmtPKR(plan.processingFee)}
+                        <span className="line-through opacity-50">{fmtPKR(plan.originalProcessingFee)}</span>
+                        <span className="font-bold">-{plan.discountPct}%</span>
                       </span>
                     ) : (
-                      <span className="ml-1.5">• Fee {fmtPKR(plan.processingFee)}</span>
+                      <span className="text-[11px] text-muted-foreground">Fee {fmtPKR(plan.processingFee)}</span>
                     )}
-                  </p>
+                  </div>
                 </div>
-                <ChevronRight className="size-5 text-muted-foreground shrink-0" />
+                <div className="flex shrink-0 items-center gap-1 text-primary">
+                  <span className="hidden sm:inline text-xs font-medium">Select</span>
+                  <ChevronRight className="size-5" />
+                </div>
               </CardContent>
             </Card>
           )
@@ -167,11 +169,13 @@ export function LoanSelectView({ onApplied }: Props) {
       </div>
 
       {/* How it works */}
+      <div className="mt-6">
       <InfoBox>
         <span className="font-medium">How it works &mdash; </span>
         After selecting a plan, you pay a small one-time processing fee to verify your bank
         account. Once verified, your loan is activated and your first installment becomes due.
       </InfoBox>
+      </div>
     </div>
   )
 }
