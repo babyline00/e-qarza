@@ -23,6 +23,7 @@ model User {
   banned       Boolean  @default(false)
   avatarPath   String?
   notifPrefs   String   @default("in_app,email,sms") // comma-separated enabled channels
+  staffAccess  String   @default("") // comma-separated admin tabs: analytics,kyc,payments,applications,withdrawals,manage,users,settings
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -159,6 +160,7 @@ model BankDetail {
   accountTitle String
   accountNumber String
   iban      String
+  logoPath  String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 }

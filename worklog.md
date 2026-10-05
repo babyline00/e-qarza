@@ -1012,3 +1012,58 @@ Stage Summary:
 - Users can withdraw to bank accounts, admins approve/reject with auto-refund on rejection
 - All views mobile-responsive
 - Lint clean, no runtime errors
+
+---
+Task ID: B1-B6 (Bottom Nav, Admin Sidebar, Bank Logo, Custom Code, Staff Roles)
+Agent: main
+Task: Build user bottom navigation bar, admin sidebar layout, bank logo upload, custom code settings, staff roles with access control
+
+Work Log:
+- Feature: User bottom navigation bar
+  * New `bottom-nav.tsx` — fixed bottom bar (mobile only, md:hidden) with 5 tabs: Home, Loans, Wallet, Alerts, Profile
+  * Active tab highlighted with orange color + bottom indicator bar, unread notification badge on Alerts
+  * Added pb-16 md:pb-0 to main content so it's not hidden behind the nav
+  * Verified: VLM 9/10 (native mobile app aesthetic)
+- Feature: Admin sidebar layout (replaced horizontal tabs)
+  * Complete rewrite of admin-view.tsx — left sidebar (w-56) on desktop, mobile drawer with hamburger toggle
+  * Sidebar items: Analytics, KYC Review, Payments, Applications, Withdrawals, Manage, Users, Settings (8 items)
+  * Each item has icon + optional badge (KYC count, payment count)
+  * Active item gets bg-brand-gradient; sticky sidebar (top-14, calc(100vh - 3.5rem))
+  * Mobile: hamburger opens drawer with overlay + slide-in animation
+  * Content area scrolls independently
+  * Verified: VLM 9/10 (clean, professional sidebar layout)
+- Feature: Bank details with logo upload (optional)
+  * Added `logoPath String?` to BankDetail schema + db:push
+  * New API `POST/DELETE /api/admin/banks/[id]/logo` — multipart upload (1MB max, JPG/PNG/WEBP/SVG), deletes old logo, saves with random filename
+  * Bank logos can be shown on the fee payment screen (optional — UI already renders bankName, logo enhancement ready)
+- Feature: Custom code settings (chat code + custom code with on/off)
+  * New API `GET/POST /api/admin/settings` — manages customChatCode/customChatEnabled, customHeaderCode/customHeaderEnabled, customFooterCode/customFooterEnabled via AdminSetting key-value store
+  * New `admin-settings-tab.tsx` with:
+    * Custom Code Injection card: 3 sections (Chat Code, Header Code, Footer Code) each with Textarea + on/off Switch toggle
+    * Staff Roles & Access card: list staff, Add Staff button, inline editor with name/email/password + tab-access checkboxes (8 tabs)
+  * Settings API supports admin + staff with 'settings' access
+- Feature: Staff roles with configurable access
+  * Added `staffAccess String` to User schema (comma-separated tab keys)
+  * New API `GET/POST/DELETE /api/admin/staff` — list/create/update/delete staff accounts
+  * Staff role = `role: 'staff'` with `staffAccess` controlling which sidebar items are visible
+  * Admin sidebar filters items based on staff access (canAccess function)
+  * Staff login uses same auth as admin — routed to AdminView, sidebar shows only their permitted tabs
+  * Verified: created "Staff Member" (staff@e-qarza.pk / staff123) successfully
+- Schema changes: User.staffAccess, BankDetail.logoPath + db:push + db:generate
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- agent-browser E2E:
+  * Admin sidebar: 8 items visible, Analytics active by default (VLM 9/10)
+  * Settings tab: Custom Code Injection + Staff Roles sections (VLM 10/10)
+  * Staff creation: filled form → "Staff created" toast, staff appears in list
+  * Mobile bottom nav: 5 tabs (Home/Loans/Wallet/Alerts/Profile) fixed at bottom (VLM 9/10)
+- Dev log: no errors
+
+Stage Summary:
+- 5 features built: user bottom navigation bar, admin sidebar layout, bank logo upload API, custom code settings (chat/header/footer with on/off), staff roles with configurable tab access
+- Admin converted from horizontal tabs to professional sidebar layout (desktop + mobile drawer)
+- Staff can log in and see only their permitted admin sections
+- Custom code injection ready for chat widgets, analytics, etc.
+- All mobile-responsive with native-app bottom navigation
+- Lint clean, no runtime errors

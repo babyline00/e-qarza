@@ -22,6 +22,7 @@ import { DashboardSkeleton } from '@/components/shared/dashboard-skeleton'
 import { KeyboardShortcutsHelp } from '@/components/shared/keyboard-shortcuts-help'
 import { OnboardingTour } from '@/components/shared/onboarding-tour'
 import { TopNav } from '@/components/layout/top-nav'
+import { BottomNav } from '@/components/layout/bottom-nav'
 import { Footer } from '@/components/layout/footer'
 import { useKeyboardShortcuts } from '@/lib/use-keyboard-shortcuts'
 import { Loader2 } from 'lucide-react'
@@ -178,8 +179,9 @@ export function AppShell() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopNav onLogout={handleLogout} onRefresh={refresh} onNavigate={setView} activeView={view} />
-      <main id="main-content" className="flex-1">{content}</main>
+      <main id="main-content" className="flex-1 pb-16 md:pb-0">{content}</main>
       <Footer />
+      <BottomNav onNavigate={setView} activeView={view} />
       <KeyboardShortcutsHelp />
       <OnboardingTour />
     </div>
