@@ -270,3 +270,73 @@ Unresolved / next-phase recommendations:
 - Dark mode polish (variables exist but untested in dark)
 - Rate limiting on auth endpoints (signup/login) to prevent brute force
 - Add unit tests for loan math (loanTotals) and overdue sync logic
+
+---
+Task ID: S2-1 to S2-7 (webDevReview cron round 2)
+Agent: main
+Task: QA, add admin users management, early settlement calculator, loan agreement PDF, in-app help center, styling polish (skeleton + hover-lift)
+
+Work Log:
+- QA via agent-browser + VLM: admin Manage tab (NO BUGS), user dashboard (NO BUGS), login with changed password (works)
+- Feature: admin users management
+  * Added `banned Boolean @default(false)` to User schema + db:push
+  * `getSessionUser` now returns null for banned non-admin users (session revoked)
+  * New API `GET/POST /api/admin/users` — list with search (name/email/phone), ban/unban (creates notification), delete (cascade)
+  * New `admin-users-tab.tsx` — search bar (debounced 350ms), summary badges (total/active/KYC pending/banned), user cards with avatar + name + email/phone + stage badge + KYC checkmark + Ban/Restore + delete buttons, warning note
+  * Added "Users" tab (4th) to admin-view with Users icon
+  * Verified: search "ahmed" → filtered to 1 user; list shows both test users with correct stage badges
+- Feature: early settlement calculator
+  * New `settlement-calculator.tsx` — computes remaining balance, 50% interest rebate, settlement amount, savings
+  * Loan summary + breakdown card (remaining/rebate/amount-to-settle) + green savings callout + next-steps info + "I want to settle" confirmation + "Print Quote" (print CSS)
+  * "Settle Early" button added to dashboard Loan Overview header (only for active loans with remaining installments)
+  * Verified: Rs 22,292 remaining, Rs 729 rebate, Rs 21,562 to settle (VLM 9/10)
+- Feature: loan agreement PDF
+  * New API `GET /api/agreement?applicationId=` — fetches full agreement data (lender, borrower, loan terms, schedule, computed totals)
+  * New `agreement-modal.tsx` — printable contract with E-Qarza letterhead, agreement number, parties grid, 7 numbered legal clauses, repayment schedule table, signature lines, "Print / Save PDF" button (print CSS isolation)
+  * "Agreement" button added to each active/completed loan card in My Loans
+  * Verified: agreement renders with EQL-R9DF197Q number, borrower details, 7 clauses, schedule, signatures (VLM 9/10)
+- Feature: in-app help center
+  * Added 'help' to View type in store
+  * New API `POST /api/support` — creates support ticket notifications to all admins + confirmation to user
+  * New `help-view.tsx` — orange LifeBuoy header, 3 contact cards (Email/Phone/Hours), 8-item FAQ accordion, contact support form (Category dropdown/Subject/Message with char counter/Send button), address note
+  * Wired "Help & Support" drawer item (was placeholder) → onNavigate('help')
+  * Wired HelpView into AppShell router
+  * Verified: submitted "Loan question" ticket → "Support ticket submitted!" toast + notification badge incremented to 1 (VLM 10/10)
+- Styling polish
+  * New `dashboard-skeleton.tsx` — skeleton loader mimicking dashboard layout (greeting/hero/quick actions/overview) with orange-tinted hero skeleton
+  * AppShell loading state now shows skeleton + orange header bar instead of generic spinner
+  * New `.hover-lift` CSS utility (translateY -2px + orange-tinted shadow on hover)
+  * Applied hover-lift to dashboard quick-action cards + loan-select plan cards
+  * Print CSS added for settlement calculator + loan agreement (body class isolation pattern)
+
+Verification:
+- `bun run lint` → 0 errors, 0 warnings (clean)
+- agent-browser E2E:
+  * Dashboard: "Settle Early" button → settlement calculator opens with correct math (VLM 9/10)
+  * My Loans: "Agreement" button → full contract renders (VLM 9/10)
+  * Admin Users tab: 4th tab works, search filters live, summary badges correct (VLM 10/10)
+  * Help view: drawer link → full help page with FAQs + working support form (VLM 10/10)
+- Dev log: no errors, no 500s
+
+Stage Summary:
+- 4 new features added and verified: admin users management (search/ban/unban/delete), early settlement calculator with rebate, printable loan agreement PDF, in-app help center with FAQs + support tickets
+- Styling polish: dashboard skeleton loader, hover-lift micro-interaction on cards, print CSS for settlement + agreement
+- All features respect orange E-Qarza design system
+- Lint clean, no runtime errors
+
+Current project status:
+- E-Qarza app now has comprehensive admin tooling (KYC approval + payment approval + plan/bank CRUD + user management) and rich user features (settlement calculator, loan agreement, help center, receipts, repayment chart, change password)
+- Full lifecycle: signup → 3-step KYC → admin approval → loan plans (admin-managed) → processing fee (admin-managed bank details) → admin approval → active loan dashboard with chart → pay installments → receipts → early settlement → loan agreement
+- Admin can now manage every aspect of the platform from the UI
+
+Unresolved / next-phase recommendations:
+- Email/SMS notification simulation (still in-app only)
+- Rate limiting on auth endpoints (signup/login) to prevent brute force
+- Dark mode polish (variables exist but untested)
+- Admin dashboard analytics (charts of KYC volume, loan disbursement, repayment rates)
+- User profile edit (currently read-only; allow updating phone/address)
+- Automated overdue reminder notifications (cron job)
+- Unit tests for loan math, settlement calc, overdue sync
+- WebSocket real-time notifications (currently polled every 12s)
+- Loan application rejection flow (admin can reject applications with reason)
+- Transaction history page (all payments across all loans in one view)

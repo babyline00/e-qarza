@@ -14,7 +14,9 @@ import { DashboardView } from '@/components/views/dashboard-view'
 import { ProfileView } from '@/components/views/profile-view'
 import { MyLoansView } from '@/components/views/my-loans-view'
 import { NotificationsView } from '@/components/views/notifications-view'
+import { HelpView } from '@/components/views/help-view'
 import { AdminView } from '@/components/views/admin-view'
+import { DashboardSkeleton } from '@/components/shared/dashboard-skeleton'
 import { TopNav } from '@/components/layout/top-nav'
 import { Footer } from '@/components/layout/footer'
 import { Loader2 } from 'lucide-react'
@@ -76,9 +78,12 @@ export function AppShell() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="mt-3 text-sm text-muted-foreground">Loading your dashboard…</p>
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="sticky top-0 z-40 h-16 border-b bg-brand-gradient" />
+        <main className="flex-1">
+          <DashboardSkeleton />
+        </main>
+        <Footer />
       </div>
     )
   }
@@ -146,6 +151,9 @@ export function AppShell() {
       break
     case 'notifications':
       content = <NotificationsView />
+      break
+    case 'help':
+      content = <HelpView />
       break
     default:
       content = <DashboardView onNavigate={setView} onRefresh={refresh} />

@@ -188,8 +188,8 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
                 onClick={() => go(item.view)}
               />
             ))}
-            {/* Help & Support (non-functional placeholder) */}
-            <DrawerItem icon={HelpCircle} label="Help & Support" onClick={() => setOpen(false)} />
+            {/* Help & Support */}
+            <DrawerItem icon={HelpCircle} label="Help & Support" onClick={() => { onNavigate?.('help'); setOpen(false) }} />
             {/* Settings (non-functional placeholder) */}
             <DrawerItem icon={Settings} label="Settings" onClick={() => setOpen(false)} />
             <Separator className="my-2" />

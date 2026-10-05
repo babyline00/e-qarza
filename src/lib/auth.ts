@@ -76,6 +76,8 @@ export async function getSessionUser() {
       where: { id: data.uid },
       include: { kycProfile: true },
     })
+    // banned users (non-admin) are treated as logged out
+    if (user && user.role !== 'admin' && user.banned) return null
     return user
   } catch {
     return null

@@ -95,7 +95,7 @@ export function LoanSelectView({ onApplied }: Props) {
                 }
               }}
               className={`rounded-2xl transition-all ${
-                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:shadow-md hover:border-primary/30'
+                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-primary/30 hover-lift'
               } ${isLoading ? 'ring-2 ring-primary' : ''}`}
             >
               <CardContent className="flex items-center gap-3 p-4">

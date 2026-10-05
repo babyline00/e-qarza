@@ -14,6 +14,7 @@ export type View =
   | 'profile'
   | 'my_loans'
   | 'notifications'
+  | 'help'
 
 export interface KycData {
   status: string

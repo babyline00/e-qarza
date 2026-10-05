@@ -9,8 +9,9 @@ import { Separator } from '@/components/ui/separator'
 import { PageHeader } from '@/components/shared/page-header'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
 import { ReceiptModal } from '@/components/shared/receipt-modal'
+import { AgreementModal } from '@/components/shared/agreement-modal'
 import { fmtPKR, fmtDate, loanTotals, fmtDateTime } from '@/lib/format'
-import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt, AlertCircle, Wallet, Download } from 'lucide-react'
+import { CreditCard, CheckCircle2, Clock, CalendarClock, Receipt, AlertCircle, Wallet, Download, FileText } from 'lucide-react'
 
 interface Props {
   onRefresh?: () => void
@@ -20,6 +21,7 @@ export function MyLoansView({ onRefresh }: Props) {
   const { applications } = useAppStore()
   const [payInstallment, setPayInstallment] = useState<{ id: string; number: number; dueDate: string; amount: number; status: string } | null>(null)
   const [receiptId, setReceiptId] = useState<string | null>(null)
+  const [agreementAppId, setAgreementAppId] = useState<string | null>(null)
 
   if (applications.length === 0) {
     return (
@@ -67,7 +69,14 @@ export function MyLoansView({ onRefresh }: Props) {
                     <p className="text-xs text-muted-foreground">Applied {fmtDate(app.appliedAt)}</p>
                   </div>
                 </div>
-                <StatusBadge status={app.status} />
+                <div className="flex items-center gap-2">
+                  {(app.status === 'active' || app.status === 'completed') && (
+                    <Button size="sm" variant="ghost" className="h-8 gap-1 text-primary" onClick={() => setAgreementAppId(app.id)}>
+                      <FileText className="size-3.5" /> Agreement
+                    </Button>
+                  )}
+                  <StatusBadge status={app.status} />
+                </div>
               </div>
 
               <CardContent className="space-y-4 p-5">
@@ -183,6 +192,7 @@ export function MyLoansView({ onRefresh }: Props) {
         onPaid={() => onRefresh?.()}
       />
       <ReceiptModal paymentId={receiptId} onClose={() => setReceiptId(null)} />
+      <AgreementModal applicationId={agreementAppId} onClose={() => setAgreementAppId(null)} />
     </div>
   )
 }

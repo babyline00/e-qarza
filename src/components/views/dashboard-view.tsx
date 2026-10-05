@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
+import { SettlementCalculator } from '@/components/shared/settlement-calculator'
 import { RepaymentChart } from './repayment-chart'
 import { fmtPKR, fmtDate, timeAgo, loanTotals } from '@/lib/format'
 import {
   Wallet, FileText, Bell, ArrowRight, ChevronRight,
-  CheckCircle2, Clock, AlertCircle, CalendarClock, Coins,
+  CheckCircle2, Clock, AlertCircle, CalendarClock, Coins, Calculator,
 } from 'lucide-react'
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 export function DashboardView({ onNavigate, onRefresh }: Props) {
   const { user, applications, notifications } = useAppStore()
   const [payInstallment, setPayInstallment] = useState<{ id: string; number: number; dueDate: string; amount: number; status: string } | null>(null)
+  const [showSettlement, setShowSettlement] = useState(false)
 
   const activeApp = applications.find((a) => a.status === 'active' || a.status === 'completed')
   const installments = activeApp?.installments || []
@@ -85,7 +87,7 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
           <button
             key={a.label}
             onClick={a.onClick}
-            className="group flex flex-col items-center gap-2 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 hover:shadow-md"
+            className="group flex flex-col items-center gap-2 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 hover-lift"
           >
             <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-brand-gradient group-hover:text-white">
               <a.icon className="size-5" />
@@ -114,9 +116,16 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
             {/* Header */}
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold">Loan Overview</h2>
-              <Badge variant={activeApp.status === 'completed' ? 'secondary' : 'default'} className="rounded-full">
-                {activeApp.status === 'completed' ? 'Completed' : 'Active'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {activeApp.status === 'active' && paidCount < installments.length && (
+                  <Button size="sm" variant="outline" className="h-7 gap-1 text-primary" onClick={() => setShowSettlement(true)}>
+                    <Calculator className="size-3.5" /> Settle Early
+                  </Button>
+                )}
+                <Badge variant={activeApp.status === 'completed' ? 'secondary' : 'default'} className="rounded-full">
+                  {activeApp.status === 'completed' ? 'Completed' : 'Active'}
+                </Badge>
+              </div>
             </div>
 
             {/* Progress */}
@@ -237,6 +246,10 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
         installment={payInstallment}
         onClose={() => setPayInstallment(null)}
         onPaid={onRefresh}
+      />
+      <SettlementCalculator
+        application={showSettlement ? activeApp : null}
+        onClose={() => setShowSettlement(false)}
       />
     </div>
   )
