@@ -71,7 +71,14 @@ export function AuthView({ onAuthed }: Props) {
       toast.success('Account created! Let\u2019s complete your KYC.')
       onAuthed()
     } catch (err) {
-      toast.error((err as Error).message)
+      const msg = (err as Error).message
+      toast.error(msg)
+      // If phone already exists, auto-switch to login with phone pre-filled
+      if (msg.includes('already exists') || msg.includes('login instead')) {
+        setLoginPhone(signupPhone)
+        setMode('login')
+        toast.info('This phone number is already registered. Please login instead.')
+      }
     } finally {
       setLoading(false)
     }
