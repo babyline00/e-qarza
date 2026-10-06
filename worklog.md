@@ -1611,3 +1611,81 @@ Stage Summary:
 - Dashboard hero now correctly shows the user's E-Qarza wallet balance
   with a Withdraw Funds button, consistent with the wallet view.
 - Lint clean, pushed to GitHub
+
+---
+Task ID: WITHDRAWAL-FIRST-INSTALLMENT-GATE
+Agent: main
+Task: When user requests withdrawal, redirect to pay first installment (with proof upload); only after verification can they withdraw and get amount in account
+
+Work Log:
+- Explored withdrawal + installment flows via Explore agent (full report in
+  conversation). Key findings: withdrawals debit immediately at request;
+  no existing first-installment check anywhere; InstallmentPaymentDialog
+  already supports proof upload via multipart to /api/payments/installment.
+
+Layer 1 — /api/wallet GET (src/app/api/wallet/route.ts):
+- Active loan query now includes installments (orderBy number asc, take 1)
+- Returns new top-level 'firstInstallment' field: { id, number, amount,
+  dueDate, status } or null when no active loan
+
+Layer 2 — /api/wallet/withdraw POST (src/app/api/wallet/withdraw/route.ts):
+- New gate after the pending-withdrawal check: queries the user's active
+  loan + first installment. If first installment status !== 'paid', returns
+  403 with { code: 'FIRST_INSTALLMENT_REQUIRED', firstInstallment, error }
+- Error message distinguishes 'verifying' (under review) from
+  'pending'/'overdue' (not yet paid)
+
+Layer 2.5 — api-client.ts (src/lib/api-client.ts):
+- Enhanced error throwing: now preserves extra fields (code,
+  firstInstallment, status) from the JSON error body on the thrown Error
+  object, so callers can branch on structured error codes. Previously only
+  the 'error' message string was preserved.
+
+Layer 3 — wallet-view.tsx (src/components/views/wallet-view.tsx):
+- New FirstInstallment interface + firstInstallment field on WalletData
+- New state: showFirstInstGate (gate dialog), payFirstInstallment (proof
+  upload dialog)
+- Computed: withdrawalBlocked (firstInst exists && status !== 'paid'),
+  firstInstVerifying (status === 'verifying')
+- 'Withdraw Funds' button now routes through handleWithdrawClick():
+  blocked → opens gate dialog; allowed → opens withdraw form
+- New banner card under the balance hero when blocked:
+  * Amber variant (verifying): "First Installment Under Verification"
+  * Orange variant (unpaid): "Pay Your First Installment to Unlock
+    Withdrawals" with installment details + "Pay First Installment" button
+- New 'Withdrawal Locked' gate dialog: explains the requirement, shows
+  installment details, "Pay First Installment" button → opens
+  InstallmentPaymentDialog
+- InstallmentPaymentDialog integrated with onPaid={load} so the wallet
+  data reloads after proof upload and the gate auto-transitions to
+  'verifying'
+- submitWithdraw() catch handler: if error.code ===
+  'FIRST_INSTALLMENT_REQUIRED', closes the withdraw modal and opens the
+  installment payment dialog directly (defense-in-depth fallback)
+- New imports: InstallmentPaymentDialog, ShieldAlert, CreditCard,
+  Hourglass, Lock, fmtDate
+
+Flow:
+1. User with active loan + unpaid first installment opens Wallet
+2. Sees orange "Pay Your First Installment to Unlock Withdrawals" banner
+3. Clicks "Withdraw Funds" → gets "Withdrawal Locked" gate dialog
+4. Clicks "Pay First Installment" → InstallmentPaymentDialog opens
+5. Uploads payment proof → submits → installment status becomes 'verifying'
+6. Wallet reloads → banner switches to amber "Under Verification"
+7. Admin approves installment payment → status becomes 'paid'
+8. Wallet reloads (15s poll) → banner disappears → withdraw unlocked
+9. User clicks "Withdraw Funds" → normal withdraw form → funds to bank
+
+Verification:
+- bun run lint → 0 errors (clean)
+- curl / → HTTP 200; curl /api/wallet → 401 Unauthorized (route compiles)
+- agent-browser open / → renders cleanly, no console/runtime errors
+- Pushed to GitHub as commit bb0b64c
+
+Stage Summary:
+- Withdrawals are now gated behind first installment payment + proof upload
+- Three UI touchpoints: banner (always visible when blocked), gate dialog
+  (on withdraw click), installment payment dialog (proof upload)
+- Backend enforces the gate independently of the UI (defense in depth)
+- api-client enhanced to support structured error codes for future use
+- Lint clean, pushed to GitHub
