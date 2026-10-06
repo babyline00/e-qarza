@@ -1499,3 +1499,30 @@ Verification:
 Stage Summary:
 - 7 bugs fixed: tab contrast, duplicate refresh, empty charts, badge colors, download placement, Terms text, payment status
 - Lint clean, pushed to GitHub
+
+---
+Task ID: PULL-27f436f
+Agent: main
+Task: Get new commits from GitHub (commit 27f436fa86842b9b7246129b93c16e182dfb4fa0) and update local code
+
+Work Log:
+- Fetched from origin (https://github.com/babyline00/e-qarza)
+- Pulled commit 27f436f "Fix KYC review, dashboard gating, admin refresh, and branding features" (fast-forward from 533e0de)
+- 25 files changed, 658 insertions, 140 deletions
+- New files: src/app/api/branding/route.ts, src/app/api/custom-code/route.ts, src/components/shared/branding-provider.tsx, src/components/shared/custom-code-injector.tsx, src/lib/use-admin-refresh.ts
+- Verified both previously-requested features remain intact:
+  * KYC phone auto-fill (src/components/views/kyc-view.tsx line 43): phoneNumber pre-filled from kyc?.phoneNumber || user?.phone, displayed with formatPhone()
+  * CNIC card scanner overlay (src/components/views/kyc-pending-view.tsx): corner brackets + animated scanline + SCANNED badge + CNIC image from /api/me
+- Dev server hot-reloaded new code without errors
+
+Verification:
+- `curl localhost:3000/` → 200 OK
+- agent-browser open / → login page renders cleanly (E-Qarza branding, Google Play download link, Login/Sign Up tabs)
+- agent-browser errors → none
+- agent-browser console → only HMR/Fast Refresh logs (no runtime errors)
+
+Stage Summary:
+- Local code now at 27f436f (latest on origin/main)
+- All previously-requested KYC fixes confirmed present and working
+- New branding/custom-code/admin-refresh features now available locally
+- Ready for next development phase
