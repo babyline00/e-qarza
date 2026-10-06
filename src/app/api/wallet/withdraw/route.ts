@@ -39,6 +39,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You already have a pending withdrawal request' }, { status: 400 })
   }
 
+  // GATE: user must have paid the first installment of their active loan
+  // before they can withdraw funds. This protects the lender — the borrower
+  // must demonstrate repayment ability before accessing loan proceeds.
+  const activeLoan = await db.loanApplication.findFirst({
+    where: { userId: user.id, status: 'active' },
+    orderBy: { activatedAt: 'desc' },
+    include: { installments: { orderBy: { number: 'asc' }, take: 1 } },
+  })
+  if (activeLoan) {
+    const firstInst = activeLoan.installments[0]
+    if (firstInst && firstInst.status !== 'paid') {
+      // 'pending' | 'overdue' | 'verifying' all block withdrawal
+      const message =
+        firstInst.status === 'verifying'
+          ? 'Your first installment payment is under verification. Withdrawals will be available once it is approved.'
+          : 'You must pay your first installment before you can withdraw funds.'
+      return NextResponse.json(
+        {
+          error: message,
+          code: 'FIRST_INSTALLMENT_REQUIRED',
+          firstInstallment: {
+            id: firstInst.id,
+            number: firstInst.number,
+            amount: firstInst.amount,
+            dueDate: firstInst.dueDate,
+            status: firstInst.status,
+          },
+        },
+        { status: 403 }
+      )
+    }
+  }
+
   // check balance
   const wallet = await getOrCreateWallet(user.id)
   if (wallet.balance < amountMinor) {

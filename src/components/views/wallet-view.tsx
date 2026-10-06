@@ -10,13 +10,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
+import { InstallmentPaymentDialog } from '@/components/shared/installment-payment-dialog'
 import { api } from '@/lib/api-client'
-import { fmtPKR, fmtDateTime, timeAgo } from '@/lib/format'
+import { fmtPKR, fmtDate, fmtDateTime, timeAgo } from '@/lib/format'
 import { toast } from 'sonner'
 import {
   Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine, Download, Loader2,
   TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle, Banknote, History,
+  ShieldAlert, CreditCard, Hourglass, Lock,
 } from 'lucide-react'
+
+interface FirstInstallment {
+  id: string
+  number: number
+  amount: number
+  dueDate: string
+  status: string // pending | verifying | paid | overdue
+}
 
 interface WalletData {
   wallet: { id: string; balance: number }
@@ -49,6 +59,7 @@ interface WalletData {
     tenureMonths: number
     activatedAt: string | null
   } | null
+  firstInstallment?: FirstInstallment | null
 }
 
 const TXN_ICONS: Record<string, React.ElementType> = {
@@ -71,6 +82,8 @@ export function WalletView() {
   const [data, setData] = useState<WalletData | null>(null)
   const [loading, setLoading] = useState(true)
   const [showWithdraw, setShowWithdraw] = useState(false)
+  const [showFirstInstGate, setShowFirstInstGate] = useState(false)
+  const [payFirstInstallment, setPayFirstInstallment] = useState<FirstInstallment | null>(null)
   const [bankName, setBankName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [iban, setIban] = useState('')
@@ -113,7 +126,17 @@ export function WalletView() {
       setIban('')
       load()
     } catch (e) {
-      toast.error((e as Error).message)
+      const err = e as Error & { code?: string; firstInstallment?: FirstInstallment }
+      // If the server says the first installment must be paid first, close the
+      // withdraw modal and open the first-installment gate instead.
+      if (err.code === 'FIRST_INSTALLMENT_REQUIRED' && err.firstInstallment) {
+        setShowWithdraw(false)
+        setPayFirstInstallment(err.firstInstallment)
+        setShowFirstInstGate(false) // gate is superseded by the payment dialog
+        toast.info(err.message)
+      } else {
+        toast.error(err.message)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -132,6 +155,22 @@ export function WalletView() {
   const balance = data.wallet.balance
   const pendingWithdrawals = data.withdrawals.filter((w) => w.status === 'pending')
 
+  // Withdrawal gate: the user must have paid the first installment of their
+  // active loan before they can withdraw funds to their bank account.
+  const firstInst = data.firstInstallment
+  const withdrawalBlocked = !!firstInst && firstInst.status !== 'paid'
+  const firstInstVerifying = firstInst?.status === 'verifying'
+
+  // Called when the user clicks "Withdraw Funds".
+  function handleWithdrawClick() {
+    if (withdrawalBlocked) {
+      // Show the first-installment gate instead of the withdraw form.
+      setShowFirstInstGate(true)
+      return
+    }
+    setShowWithdraw(true)
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-4">
       {/* Wallet Balance Hero */}
@@ -148,14 +187,57 @@ export function WalletView() {
             </p>
             <Button
               className="mt-4 bg-white text-brand hover:bg-white/90 font-semibold"
-              onClick={() => setShowWithdraw(true)}
+              onClick={handleWithdrawClick}
               disabled={balance < 10000}
             >
-              <ArrowUpFromLine className="size-4" /> Withdraw Funds
+              {withdrawalBlocked ? <Lock className="size-4" /> : <ArrowUpFromLine className="size-4" />}
+              {withdrawalBlocked ? 'Withdraw Funds' : 'Withdraw Funds'}
             </Button>
           </div>
         </div>
       </Card>
+
+      {/* First-Installment Gate Banner */}
+      {withdrawalBlocked && (
+        <Card className={`rounded-2xl ${firstInstVerifying ? 'border-amber-200 bg-amber-50' : 'border-primary/30 bg-primary/5'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <span className={`grid size-10 place-items-center rounded-xl shrink-0 ${firstInstVerifying ? 'bg-amber-100 text-amber-600' : 'bg-primary/15 text-primary'}`}>
+                {firstInstVerifying ? <Hourglass className="size-5" /> : <ShieldAlert className="size-5" />}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${firstInstVerifying ? 'text-amber-800' : 'text-foreground'}`}>
+                  {firstInstVerifying
+                    ? 'First Installment Under Verification'
+                    : 'Pay Your First Installment to Unlock Withdrawals'}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {firstInstVerifying
+                    ? 'Your first installment payment proof is being reviewed. Once approved, withdrawals will be enabled automatically.'
+                    : 'To withdraw funds to your bank account, you must first pay the first installment of your active loan. Upload your payment proof below.'}
+                </p>
+                {firstInst && (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                    <span className="text-muted-foreground">
+                      Installment #{firstInst.number} • <span className="font-semibold text-foreground">{fmtPKR(firstInst.amount)}</span>
+                    </span>
+                    <span className="text-muted-foreground">Due {fmtDate(firstInst.dueDate)}</span>
+                  </div>
+                )}
+                {!firstInstVerifying && firstInst && (
+                  <Button
+                    size="sm"
+                    className="mt-3 bg-brand-gradient text-white hover:opacity-90 gap-1.5"
+                    onClick={() => setPayFirstInstallment(firstInst)}
+                  >
+                    <CreditCard className="size-4" /> Pay First Installment
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Loan Breakdown — Balance = Loan (Principal) − Processing Fee */}
       {data.loanBreakdown && (
@@ -382,6 +464,60 @@ export function WalletView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* First-Installment Gate Dialog — shown when user clicks Withdraw Funds
+          but hasn't paid their first installment yet. */}
+      <Dialog open={showFirstInstGate} onOpenChange={setShowFirstInstGate}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="size-5 text-primary" /> Withdrawal Locked
+            </DialogTitle>
+            <DialogDescription>
+              You need to pay your first installment before you can withdraw funds to your bank account.
+            </DialogDescription>
+          </DialogHeader>
+          {firstInst && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Installment</span>
+                <span className="font-semibold">#{firstInst.number}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Amount</span>
+                <span className="font-semibold">{fmtPKR(firstInst.amount)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Due Date</span>
+                <span className="font-semibold">{fmtDate(firstInst.dueDate)}</span>
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Pay this installment now by uploading your payment proof. Once the admin verifies your payment, withdrawals will be unlocked automatically.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowFirstInstGate(false)}>Later</Button>
+            <Button
+              className="bg-brand-gradient text-white hover:opacity-90 gap-1.5"
+              onClick={() => {
+                if (!firstInst) return
+                setShowFirstInstGate(false)
+                setPayFirstInstallment(firstInst)
+              }}
+            >
+              <CreditCard className="size-4" /> Pay First Installment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Installment Payment Dialog — proof upload for the first installment */}
+      <InstallmentPaymentDialog
+        installment={payFirstInstallment}
+        onClose={() => setPayFirstInstallment(null)}
+        onPaid={load}
+      />
     </div>
   )
 }

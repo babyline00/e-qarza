@@ -48,7 +48,16 @@ export async function api<T = unknown>(
       (data && typeof data === 'object' && 'error' in data
         ? String((data as Record<string, unknown>).error)
         : null) || `Request failed (${res.status})`
-    throw new Error(msg)
+    // Preserve extra fields (e.g. `code`, `firstInstallment`) from the error
+    // body on the thrown Error so callers can branch on structured errors.
+    const err = new Error(msg) as Error & { status?: number; code?: string; [key: string]: unknown }
+    err.status = res.status
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
+        if (k !== 'error') err[k] = v
+      }
+    }
+    throw err
   }
 
   // Cache successful GET responses

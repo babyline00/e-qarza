@@ -22,12 +22,29 @@ export async function GET() {
       take: 20,
     }),
     // Active loan — used to show "Balance = Loan + Processing Fee" breakdown
+    // and to gate withdrawals behind the first installment being paid.
     db.loanApplication.findFirst({
       where: { userId: user.id, status: 'active' },
       orderBy: { activatedAt: 'desc' },
-      include: { plan: { select: { name: true } } },
+      include: {
+        plan: { select: { name: true } },
+        installments: { orderBy: { number: 'asc' }, take: 1 },
+      },
     }),
   ])
+
+  // First installment of the active loan (number === 1). Used by the wallet UI
+  // to gate withdrawals — users must pay their first installment before they
+  // can withdraw funds to their bank account.
+  const firstInstallment = activeLoan?.installments[0]
+    ? {
+        id: activeLoan.installments[0].id,
+        number: activeLoan.installments[0].number,
+        amount: activeLoan.installments[0].amount,
+        dueDate: activeLoan.installments[0].dueDate,
+        status: activeLoan.installments[0].status,
+      }
+    : null
 
   // Build loan breakdown if there's an active loan
   const loanBreakdown = activeLoan
@@ -68,5 +85,6 @@ export async function GET() {
       reviewedAt: w.reviewedAt?.toISOString() || null,
     })),
     loanBreakdown,
+    firstInstallment,
   })
 }
