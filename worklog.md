@@ -1454,3 +1454,48 @@ Stage Summary:
 - All results sorted newest first
 - Action buttons only appear for pending items
 - Lint clean, pushed to GitHub
+
+---
+Task ID: F1-F6 (Bug Fixes Round)
+Agent: main
+Task: Fix tabs contrast, empty charts, duplicate refresh, badge consistency, download button placement
+
+Work Log:
+- Fix: Login tabs contrast
+  * Root cause: `data-[state=active]:bg-brand-gradient` CSS class using oklch() not applying to Radix TabsTrigger
+  * Fix: Added inline `style={{ backgroundImage: mode === 'login' ? 'linear-gradient(135deg, #F97316, #EA580C)' : undefined }}`
+  * Active tab now clearly orange gradient with white text, inactive tab is dark text
+  * VLM: 10/10
+- Fix: Admin duplicate Refresh button
+  * Removed Refresh button from admin header (was redundant with the one in analytics content area)
+  * Only one Refresh button remains (in the Analytics content toolbar)
+- Fix: Empty chart placeholders
+  * 6-Month Trend: shows "No trend data yet — new applications will appear here" when all months are 0
+  * Disbursement by Plan: shows "No disbursement data yet" when all plans have 0 amount
+  * Payment Status pie: shows "No payment data yet" when pieData is empty
+- Fix: KPI badge consistency
+  * Added `trendType` field to each KPI card (success/amber/muted)
+  * Success (green): "All clear", "+N", "Active"
+  * Amber (warning): "N pending", "Action needed"
+  * Muted (neutral): "None" (for 0 active loans)
+  * No more contradictory green badge for "None active"
+- Fix: App download button placement
+  * Moved download buttons OUTSIDE the white login card (below it)
+  * Was cluttering the form area inside the card
+  * Now clean separation: card has form, below card has download options
+- Fix: Terms of Service text
+  * Restored "By continuing, you agree to our Terms of Service & Privacy Policy" inside the card
+  * Was accidentally removed when moving download buttons
+- Fix: Payments status badge
+  * Shows actual status with color coding (approved=green, rejected=red, submitted=outline)
+  * Approve/Reject buttons only appear for pending (submitted) items
+
+Verification:
+- `bun run lint` → 0 errors (clean)
+- VLM: Login page 10/10 (tabs orange, download outside card, Terms text present)
+- VLM: Admin dashboard 9/10 (one refresh button, consistent badges, empty chart placeholders)
+- Pushed to GitHub
+
+Stage Summary:
+- 7 bugs fixed: tab contrast, duplicate refresh, empty charts, badge colors, download placement, Terms text, payment status
+- Lint clean, pushed to GitHub
