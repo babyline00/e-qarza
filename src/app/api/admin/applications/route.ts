@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   const app = await db.loanApplication.findUnique({
     where: { id: body.applicationId },
-    include: { user: true },
+    include: { user: true, plan: { select: { name: true } } },
   })
   if (!app) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
 
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       data: {
         userId: app.userId,
         title: 'Loan Application Rejected',
-        message: `Your ${app.planName} plan application was rejected. Reason: ${reason}. You can apply for a different plan.`,
+        message: `Your ${app.plan.name} plan application was rejected. Reason: ${reason}. You can apply for a different plan.`,
         type: 'error',
       },
     })

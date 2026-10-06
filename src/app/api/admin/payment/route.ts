@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       // activate loan + generate installments
       const app = await db.loanApplication.findUnique({
         where: { id: payment.applicationId },
-        include: { installments: true },
+        include: { installments: true, plan: { select: { name: true } } },
       })
       if (app && app.status === 'fee_submitted') {
         // flat interest: total = principal * (1 + rate/100 * tenure/12)
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
           payment.userId,
           disbursementAmount,
           'loan_disbursement',
-          `Loan disbursement: ${app.planName} plan`,
+          `Loan disbursement: ${app.plan.name} plan`,
           app.id
         )
 
