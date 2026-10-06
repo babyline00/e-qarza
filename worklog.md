@@ -1526,3 +1526,51 @@ Stage Summary:
 - All previously-requested KYC fixes confirmed present and working
 - New branding/custom-code/admin-refresh features now available locally
 - Ready for next development phase
+
+---
+Task ID: PAYMENT-SCAN + WALLET-BREAKDOWN
+Agent: main
+Task: In Payment Under Verification, show the payment proof image scanner; after verification is successful, in wallets show the balance = loan + processing fee breakdown
+
+Work Log:
+- fee-pending-view.tsx (Payment Under Verification):
+  * Added payment proof scanner card between the timeline and the info box
+  * Reads app.feePayment.proofPath (URL like /uploads/xxx.png) from the store
+  * Scanner visual: orange corner brackets + animated horizontal scanline
+    (proofscan keyframe, 2.2s ease-in-out infinite) + glow shadow
+  * Header: "Payment Proof" with amber "VERIFYING" badge
+  * Bottom info bar: receipt icon + "Receipt — Under review" + txn ref
+  * Fallback: dashed "No proof image uploaded" card when proofPath is missing
+  * Extended FeePaymentInfo interface to include proofPath
+- /api/wallet/route.ts (GET):
+  * Added parallel query for the user's active loan (status='active',
+    newest activatedAt first) including plan name
+  * Returns new loanBreakdown object: { applicationId, planName, principal
+    (loan amount), processingFee, netDisbursed (principal - fee),
+    interestRate, tenureMonths, activatedAt }
+  * loanBreakdown is null when no active loan exists
+- wallet-view.tsx (Wallet, after verification successful):
+  * Extended WalletData interface with optional loanBreakdown field
+  * Added "Loan Disbursed" breakdown card directly under the balance hero
+    (only renders when data.loanBreakdown is present)
+  * Shows three rows: + Loan Principal (green), - Processing Fee (red),
+    = Credited to Wallet (orange bold) with a Separator
+  * Plan name + tenure badge in the card header
+  * Green success banner: "Verification successful — loan amount (minus
+    fee) has been added to your wallet balance."
+  * Activation timestamp footer
+
+Verification:
+- bun run lint → 0 errors (clean)
+- curl /api/wallet → 401 Unauthorized (route compiles, auth enforced)
+- agent-browser open / → renders cleanly, no console/runtime errors
+- Rebased on top of remote (6d85ac2 from cron review) and pushed as f23dac4
+
+Stage Summary:
+- Payment Under Verification now shows the uploaded payment proof with a
+  live scanner overlay (matches the CNIC scanner visual language)
+- Wallet view now shows a clear loan+fee breakdown card after a loan is
+  activated, so users see exactly how their balance was composed
+- Both features only render when the relevant data exists (proof uploaded /
+  active loan present), so no regressions for other user stages
+- Lint clean, pushed to GitHub (commit f23dac4)
