@@ -182,12 +182,9 @@ export function AdminView() {
           <div className="min-w-0 flex-1">
             <h1 className="text-base font-bold truncate">Admin Dashboard</h1>
             <p className="text-[11px] text-muted-foreground truncate">
-              {isStaff ? `Staff: ${user?.name || user?.email}` : 'Administrator'}
+              {isStaff ? `Staff: ${user?.name || user?.phone}` : 'Administrator'}
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={load} disabled={loading} className="h-8 gap-1.5 shrink-0">
-            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
-          </Button>
         </div>
       </div>
 

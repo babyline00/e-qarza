@@ -132,13 +132,15 @@ export function AuthView({ onAuthed }: Props) {
               <TabsList className="grid w-full grid-cols-2 mb-5 rounded-lg bg-muted p-1">
                 <TabsTrigger
                   value="login"
-                  className="rounded-md text-sm font-semibold text-muted-foreground data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/60"
+                  className="rounded-md text-sm font-semibold text-foreground/60 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                  style={{ backgroundImage: mode === 'login' ? 'linear-gradient(135deg, #F97316, #EA580C)' : undefined }}
                 >
                   Login
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
-                  className="rounded-md text-sm font-semibold text-muted-foreground data-[state=active]:bg-brand-gradient data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/60"
+                  className="rounded-md text-sm font-semibold text-foreground/60 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                  style={{ backgroundImage: mode === 'signup' ? 'linear-gradient(135deg, #F97316, #EA580C)' : undefined }}
                 >
                   Sign Up
                 </TabsTrigger>
@@ -261,33 +263,33 @@ export function AuthView({ onAuthed }: Props) {
             <p className="mt-4 text-center text-[11px] text-muted-foreground">
               By continuing, you agree to our Terms of Service & Privacy Policy
             </p>
-
-            {/* App download buttons */}
-            {appDownloads.length > 0 && (
-              <div className="mt-4 flex items-center justify-center gap-3 border-t pt-4">
-                {appDownloads.map((app) => (
-                  <a
-                    key={app.id}
-                    href={app.filePath}
-                    download
-                    className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-medium shadow-sm transition hover:border-primary/30 hover:bg-accent"
-                  >
-                    {app.platform === 'android' ? (
-                      <Smartphone className="size-4 text-primary" />
-                    ) : (
-                      <Apple className="size-4 text-primary" />
-                    )}
-                    <div className="leading-tight">
-                      <p className="font-semibold">{app.platform === 'android' ? 'Android' : 'iOS'}</p>
-                      <p className="text-[10px] text-muted-foreground">v{app.version}</p>
-                    </div>
-                    <Download className="size-3.5 text-muted-foreground" />
-                  </a>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* App download buttons — OUTSIDE the card, below it */}
+        {appDownloads.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-3">
+            {appDownloads.map((app) => (
+              <a
+                key={app.id}
+                href={app.filePath}
+                download
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-medium shadow-sm transition hover:border-primary/30 hover:bg-accent"
+              >
+                {app.platform === 'android' ? (
+                  <Smartphone className="size-4 text-primary" />
+                ) : (
+                  <Apple className="size-4 text-primary" />
+                )}
+                <div className="leading-tight">
+                  <p className="font-semibold">{app.platform === 'android' ? 'Android' : 'iOS'}</p>
+                  <p className="text-[10px] text-muted-foreground">v{app.version}</p>
+                </div>
+                <Download className="size-3.5 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

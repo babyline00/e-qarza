@@ -111,10 +111,10 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
   const { totals, byPlan, monthlyTrend, paymentStatus, recentUsers, recentApplications } = stats
 
   const kpiCards = [
-    { label: 'Total Users', value: totals.users, sub: `${totals.newUsersThisMonth || 0} new this month`, icon: Users, color: 'text-primary', bg: 'bg-primary/10', trend: totals.newUsersThisMonth ? `+${totals.newUsersThisMonth}` : null },
-    { label: 'KYC Approved', value: totals.kycApproved, sub: `${totals.kycPending} pending`, icon: ShieldCheck, color: 'text-success', bg: 'bg-success/10', trend: totals.kycPending > 0 ? `${totals.kycPending} pending` : 'All clear' },
-    { label: 'Active Loans', value: totals.activeLoans, sub: `${totals.completedLoans} completed`, icon: CreditCard, color: 'text-primary', bg: 'bg-primary/10', trend: totals.activeLoans > 0 ? 'Active' : 'None active' },
-    { label: 'Pending Payments', value: totals.pendingPayments, sub: 'awaiting review', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100', trend: totals.pendingPayments > 0 ? 'Action needed' : 'All clear' },
+    { label: 'Total Users', value: totals.users, sub: `${totals.newUsersThisMonth || 0} new this month`, icon: Users, color: 'text-primary', bg: 'bg-primary/10', trend: totals.newUsersThisMonth ? `+${totals.newUsersThisMonth}` : null, trendType: 'success' },
+    { label: 'KYC Approved', value: totals.kycApproved, sub: `${totals.kycPending} pending`, icon: ShieldCheck, color: 'text-success', bg: 'bg-success/10', trend: totals.kycPending > 0 ? `${totals.kycPending} pending` : 'All clear', trendType: totals.kycPending > 0 ? 'amber' : 'success' },
+    { label: 'Active Loans', value: totals.activeLoans, sub: `${totals.completedLoans} completed`, icon: CreditCard, color: 'text-primary', bg: 'bg-primary/10', trend: totals.activeLoans > 0 ? 'Active' : 'None', trendType: totals.activeLoans > 0 ? 'success' : 'muted' },
+    { label: 'Pending Payments', value: totals.pendingPayments, sub: 'awaiting review', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100', trend: totals.pendingPayments > 0 ? 'Action needed' : 'All clear', trendType: totals.pendingPayments > 0 ? 'amber' : 'success' },
   ]
 
   const pieData = [
@@ -189,9 +189,9 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
                 </span>
                 {k.trend && (
                   <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
-                    k.trend.includes('pending') || k.trend.includes('Action') ? 'bg-amber-100 text-amber-700' :
-                    k.trend.includes('clear') || k.trend.includes('Active') ? 'bg-success/15 text-success' :
-                    k.trend.startsWith('+') ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'
+                    k.trendType === 'success' ? 'bg-success/15 text-success' :
+                    k.trendType === 'amber' ? 'bg-amber-100 text-amber-700' :
+                    'bg-muted text-muted-foreground'
                   }`}>
                     {k.trend}
                   </span>
@@ -260,6 +260,11 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
           <CardDescription>Applications received and amount disbursed per month.</CardDescription>
         </CardHeader>
         <CardContent>
+          {monthlyTrend.every((m) => m.apps === 0 && m.disbursed === 0) ? (
+            <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              No trend data yet — new applications will appear here
+            </div>
+          ) : (
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyTrend} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -274,6 +279,7 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
               </LineChart>
             </ResponsiveContainer>
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -286,6 +292,11 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
             <CardDescription>Active + completed loans grouped by plan.</CardDescription>
           </CardHeader>
           <CardContent>
+            {byPlan.every((p) => p.amount === 0) ? (
+              <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
+                No disbursement data yet
+              </div>
+            ) : (
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byPlan} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
@@ -297,6 +308,7 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            )}
           </CardContent>
         </Card>
 
@@ -307,6 +319,11 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
             <CardDescription>Breakdown of all payment proofs.</CardDescription>
           </CardHeader>
           <CardContent>
+            {pieData.length === 0 ? (
+              <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
+                No payment data yet
+              </div>
+            ) : (
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -326,6 +343,7 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
