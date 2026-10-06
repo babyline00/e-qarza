@@ -9,7 +9,7 @@ import { api } from '@/lib/api-client'
 import { Clock, RefreshCw, ScanLine, IdCard, CheckCircle2, ShieldCheck } from 'lucide-react'
 
 interface Props {
-  onRefresh: (force?: boolean) => void
+  onRefresh: () => void
 }
 
 interface KycData {
@@ -30,17 +30,17 @@ const TIMELINE: TimelineStep[] = [
   {
     title: 'Document Verification',
     description: 'Our team is reviewing your CNIC and selfie for clarity and authenticity.',
-    status: 'completed',
+    status: 'active',
   },
   {
     title: 'Identity Check',
     description: 'Cross-checking your details against provided records.',
-    status: 'completed',
+    status: 'pending',
   },
   {
     title: 'Final Approval',
     description: 'You will be notified once your account is approved.',
-    status: 'active',
+    status: 'pending',
   },
 ]
 
@@ -142,7 +142,7 @@ export function KycPendingView({ onRefresh }: Props) {
           <Button
             variant="outline"
             className="mt-5 w-full rounded-lg"
-            onClick={() => onRefresh(true)}
+            onClick={onRefresh}
           >
             <RefreshCw className="size-4" /> Check Status
           </Button>
