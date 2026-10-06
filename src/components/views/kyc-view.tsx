@@ -30,17 +30,17 @@ const PAKISTANI_CITIES = [
 ]
 
 export function KycView({ onDone }: Props) {
-  const { kyc, logout } = useAppStore()
+  const { user, kyc, logout } = useAppStore()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const wasRejected = kyc?.status === 'rejected'
 
-  // Step 1 state
+  // Step 1 state — auto-fill phone from user account
   const [cnicName, setCnicName] = useState(kyc?.cnicName || '')
   const [cnicNumber, setCnicNumber] = useState((kyc as { cnicNumber?: string })?.cnicNumber || '')
   const [fatherName, setFatherName] = useState(kyc?.fatherName || '')
   const [dob, setDob] = useState(kyc?.dob || '')
-  const [phoneNumber, setPhoneNumber] = useState(kyc?.phoneNumber || '')
+  const [phoneNumber, setPhoneNumber] = useState(kyc?.phoneNumber || user?.phone || '')
   const [cnicFront, setCnicFront] = useState<File | null>(null)
   const [cnicBack, setCnicBack] = useState<File | null>(null)
   const [selfie, setSelfie] = useState<File | null>(null)
@@ -237,12 +237,12 @@ export function KycView({ onDone }: Props) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-sm font-medium">Phone Number <span className="text-[10px] text-muted-foreground">(from your account)</span></Label>
                   <Input
                     id="phone"
-                    className="rounded-lg"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(formatPhone(e.target.value))}
+                    className="rounded-lg bg-muted/50"
+                    value={formatPhone(phoneNumber)}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="0300-1234567"
                     inputMode="numeric"
                     maxLength={12}
