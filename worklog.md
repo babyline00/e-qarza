@@ -1574,3 +1574,40 @@ Stage Summary:
 - Both features only render when the relevant data exists (proof uploaded /
   active loan present), so no regressions for other user stages
 - Lint clean, pushed to GitHub (commit f23dac4)
+
+---
+Task ID: DASHBOARD-WALLET-HERO
+Agent: main
+Task: dashboard-view.tsx line 74 — change 'View Details' to 'Withdraw Funds' and fix E-Qarza Wallet Balance display
+
+Work Log:
+- Root cause: dashboard hero card showed "Total Loan Amount" (computed via
+  loanTotals) with a "View Details" button → my_loans. This was not the
+  wallet balance and the button was a loan action, inconsistent with the
+  wallet view's "Withdraw Funds" pattern.
+- dashboard-view.tsx changes:
+  * Added useEffect to fetch real wallet balance + pending withdrawals
+    count from /api/wallet (same endpoint the wallet view uses).
+  * Hero label: "Total Loan Amount" → "E-Qarza Wallet Balance".
+  * Hero amount: totalLoanAmount → walletBalance (from API, falls back to 0).
+  * Hero subtitle: now shows pending withdrawal count or
+    "Available for withdrawal or use" (matches wallet-view.tsx wording).
+  * Hero button: "View Details" (→ my_loans) → "Withdraw Funds" (→ wallet)
+    with ArrowUpFromLine icon instead of ArrowRight.
+  * Removed now-unused loanTotals import and ArrowRight icon import.
+  * Added imports: useEffect (react), api (api-client), ArrowUpFromLine.
+- The loan information is still fully visible in the "Loan Overview" card
+  below the hero (Active Loan row, installments paid, next installment),
+  so no context is lost.
+
+Verification:
+- bun run lint → 0 errors (clean)
+- curl / → HTTP 200
+- agent-browser open / → renders cleanly, no console/runtime errors
+  (only Fast Refresh / HMR logs)
+- Pushed to GitHub as commit 0011c4f
+
+Stage Summary:
+- Dashboard hero now correctly shows the user's E-Qarza wallet balance
+  with a Withdraw Funds button, consistent with the wallet view.
+- Lint clean, pushed to GitHub
