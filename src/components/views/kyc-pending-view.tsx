@@ -48,8 +48,8 @@ export function KycPendingView({ onRefresh }: Props) {
   const [kyc, setKyc] = useState<KycData | null>(null)
 
   useEffect(() => {
-    // Fetch KYC data to show CNIC front image
-    api<{ kyc: KycData | null }>('/api/auth/signup')
+    // Fetch KYC data from /api/me to show CNIC front image with scanner
+    api<{ kyc: KycData | null }>('/api/me')
       .then((r) => setKyc(r.kyc))
       .catch(() => {})
   }, [])

@@ -54,9 +54,13 @@ export async function GET() {
       ? {
           status: user.kycProfile.status,
           cnicName: user.kycProfile.cnicName,
+          cnicNumber: user.kycProfile.cnicNumber,
           fatherName: user.kycProfile.fatherName,
           dob: user.kycProfile.dob,
           phoneNumber: user.kycProfile.phoneNumber,
+          cnicFrontPath: user.kycProfile.cnicFrontPath,
+          cnicBackPath: user.kycProfile.cnicBackPath,
+          selfiePath: user.kycProfile.selfiePath,
           education: user.kycProfile.education,
           maritalStatus: user.kycProfile.maritalStatus,
           gender: user.kycProfile.gender,
