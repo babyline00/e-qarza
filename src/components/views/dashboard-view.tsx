@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore, type View } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,9 +10,10 @@ import { InstallmentPaymentDialog } from '@/components/shared/installment-paymen
 import { SettlementCalculator } from '@/components/shared/settlement-calculator'
 import { RepaymentChart } from './repayment-chart'
 import { CreditScoreCard } from './credit-score-card'
-import { fmtPKR, fmtDate, timeAgo, loanTotals } from '@/lib/format'
+import { api } from '@/lib/api-client'
+import { fmtPKR, fmtDate, timeAgo } from '@/lib/format'
 import {
-  Wallet, FileText, Bell, ArrowRight, ChevronRight,
+  Wallet, FileText, Bell, ArrowUpFromLine, ChevronRight,
   CheckCircle2, Clock, AlertCircle, CalendarClock, Coins, Calculator, Sparkles,
 } from 'lucide-react'
 
@@ -25,6 +26,8 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
   const { user, applications, notifications } = useAppStore()
   const [payInstallment, setPayInstallment] = useState<{ id: string; number: number; dueDate: string; amount: number; status: string } | null>(null)
   const [showSettlement, setShowSettlement] = useState(false)
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [pendingWithdrawals, setPendingWithdrawals] = useState(0)
 
   const activeApp = applications.find((a) => a.status === 'active' || a.status === 'completed')
   const installments = activeApp?.installments || []
@@ -34,7 +37,19 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
 
   const recentNotifs = notifications.slice(0, 3)
   const firstName = user?.name?.split(' ')[0] || 'there'
-  const totalLoanAmount = activeApp ? loanTotals(activeApp.amount, activeApp.interestRate, activeApp.tenureMonths).totalPayable : 0
+
+  // Fetch real wallet balance from /api/wallet
+  useEffect(() => {
+    let active = true
+    api<{ wallet: { balance: number }; withdrawals: { status: string }[] }>('/api/wallet')
+      .then((r) => {
+        if (!active) return
+        setWalletBalance(r.wallet.balance)
+        setPendingWithdrawals(r.withdrawals.filter((w) => w.status === 'pending').length)
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
 
   const quickActions = [
     {
@@ -61,22 +76,22 @@ export function DashboardView({ onNavigate, onRefresh }: Props) {
         <p className="text-sm text-muted-foreground mt-0.5">Welcome back!</p>
       </div>
 
-      {/* Hero card */}
+      {/* Hero card — E-Qarza Wallet Balance */}
       <div className="relative overflow-hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-md animate-fade-up">
         <div className="relative z-10">
-          <p className="text-xs font-medium uppercase tracking-wide text-white/80">Total Loan Amount</p>
-          <p className="mt-1 text-3xl font-extrabold">{fmtPKR(totalLoanAmount)}</p>
-          {activeApp && (
-            <p className="mt-0.5 text-xs text-white/80">
-              {activeApp.planName} plan • {activeApp.tenureMonths} months
-            </p>
-          )}
+          <p className="text-xs font-medium uppercase tracking-wide text-white/80">E-Qarza Wallet Balance</p>
+          <p className="mt-1 text-3xl font-extrabold">{fmtPKR(walletBalance ?? 0)}</p>
+          <p className="mt-0.5 text-xs text-white/80">
+            {pendingWithdrawals > 0
+              ? `${pendingWithdrawals} withdrawal request${pendingWithdrawals > 1 ? 's' : ''} pending`
+              : 'Available for withdrawal or use'}
+          </p>
           <Button
             size="sm"
-            onClick={() => onNavigate('my_loans')}
+            onClick={() => onNavigate('wallet')}
             className="mt-4 h-8 gap-1.5 rounded-lg bg-white text-brand hover:bg-white/90"
           >
-            View Details <ArrowRight className="size-3.5" />
+            Withdraw Funds <ArrowUpFromLine className="size-3.5" />
           </Button>
         </div>
         <Coins className="absolute -right-3 -bottom-2 size-28 text-white/15" />
