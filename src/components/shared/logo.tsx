@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { useSiteLogo } from '@/components/shared/branding-provider'
 
 interface LogoProps {
   className?: string
@@ -9,15 +10,30 @@ interface LogoProps {
 }
 
 export function Logo({ className, variant = 'full', light = false }: LogoProps) {
+  // Admin-uploaded logo (Admin → Settings → Site Logo). Falls back to the
+  // built-in mark when nothing is uploaded.
+  const siteLogo = useSiteLogo()
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <span className="grid size-9 place-items-center rounded-xl bg-brand-gradient text-white shadow-sm shrink-0">
-        {/* house + coin mark */}
-        <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
-          <path d="M3 11.5L12 4l9 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M5 10.5V20h14v-9.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="12" cy="15" r="2.6" fill="currentColor" />
-        </svg>
+      <span
+        className={cn(
+          'grid size-9 place-items-center rounded-xl text-white shadow-sm shrink-0',
+          // A custom logo carries its own colours, so the brand gradient
+          // backdrop is dropped to avoid tinting/obscuring it.
+          siteLogo ? 'overflow-hidden' : 'bg-brand-gradient',
+        )}
+      >
+        {siteLogo ? (
+          <img src={siteLogo} alt="" className="size-full object-contain p-0.5" />
+        ) : (
+          /* house + coin mark */
+          <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
+            <path d="M3 11.5L12 4l9 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M5 10.5V20h14v-9.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="12" cy="15" r="2.6" fill="currentColor" />
+          </svg>
+        )}
       </span>
       {variant === 'full' && (
         <div className="leading-none">

@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api-client'
+import { useAdminRefresh } from '@/lib/use-admin-refresh'
 import { toast } from 'sonner'
 import {
   Settings as SettingsIcon, Code, MessageSquare, Save, Loader2, UserCog,
@@ -64,19 +65,19 @@ export function AdminSettingsTab() {
   const [appPlatform, setAppPlatform] = useState('android')
   const [appVersion, setAppVersion] = useState('')
 
-  const loadSettings = useCallback(async () => {
+  const loadSettings = useCallback(async (force = false) => {
     try {
-      const r = await api<{ settings: Settings }>('/api/admin/settings')
+      const r = await api<{ settings: Settings }>('/api/admin/settings', { force })
       setSettings(r.settings)
     } catch (e) {
       toast.error((e as Error).message)
     }
   }, [])
 
-  const loadStaff = useCallback(async () => {
+  const loadStaff = useCallback(async (force = false) => {
     setLoadingStaff(true)
     try {
-      const r = await api<{ staff: StaffMember[] }>('/api/admin/staff')
+      const r = await api<{ staff: StaffMember[] }>('/api/admin/staff', { force })
       setStaff(r.staff)
     } catch (e) {
       toast.error((e as Error).message)
@@ -85,9 +86,9 @@ export function AdminSettingsTab() {
     }
   }, [])
 
-  const loadApps = useCallback(async () => {
+  const loadApps = useCallback(async (force = false) => {
     try {
-      const r = await api<{ apps: typeof apps }>('/api/admin/app-download')
+      const r = await api<{ apps: typeof apps }>('/api/admin/app-download', { force })
       setApps(r.apps)
     } catch { /* ignore */ }
   }, [])
@@ -98,6 +99,14 @@ export function AdminSettingsTab() {
     loadApps()
     api<{ logoPath: string | null }>('/api/admin/logo').then(r => setLogoPath(r.logoPath)).catch(() => {})
   }, [loadSettings, loadStaff, loadApps])
+
+  const reloadForAdmin = useCallback(() => {
+    loadSettings(true)
+    loadStaff(true)
+    loadApps(true)
+    api<{ logoPath: string | null }>('/api/admin/logo', { force: true }).then(r => setLogoPath(r.logoPath)).catch(() => {})
+  }, [loadSettings, loadStaff, loadApps])
+  useAdminRefresh(reloadForAdmin)
 
   async function uploadLogo(file: File | null) {
     if (!file) return

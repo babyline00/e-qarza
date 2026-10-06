@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { api } from '@/lib/api-client'
+import { useAdminRefresh } from '@/lib/use-admin-refresh'
 import { fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import { BroadcastCard } from './broadcast-card'
@@ -50,14 +51,14 @@ export function AdminUsersTab() {
   const [tierFilter, setTierFilter] = useState<string>('all')
   const [detailUserId, setDetailUserId] = useState<string | null>(null)
 
-  const load = useCallback(async (q?: string, tier?: string) => {
+  const load = useCallback(async (q?: string, tier?: string, force = false) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (q) params.set('q', q)
       if (tier && tier !== 'all') params.set('tier', tier)
       const qs = params.toString()
-      const r = await api<{ users: UserItem[] }>(`/api/admin/users${qs ? '?' + qs : ''}`)
+      const r = await api<{ users: UserItem[] }>(`/api/admin/users${qs ? '?' + qs : ''}`, { force })
       setUsers(r.users)
     } catch (e) {
       toast.error((e as Error).message)
@@ -75,6 +76,10 @@ export function AdminUsersTab() {
     const t = setTimeout(() => load(query, tierFilter), 350)
     return () => clearTimeout(t)
   }, [query, tierFilter, load])
+
+  // keep the active search/tier filters when the admin refresh button is pressed
+  const reloadForAdmin = useCallback(() => load(query, tierFilter, true), [load, query, tierFilter])
+  useAdminRefresh(reloadForAdmin)
 
   async function act(userId: string, action: 'ban' | 'unban' | 'delete') {
     if (action === 'delete' && !confirm('Permanently delete this user and all their data?')) return

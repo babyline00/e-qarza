@@ -191,14 +191,7 @@ export function FeePaymentView({ onSubmitted }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="txnRef">Transaction Reference / TID <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input
-              id="txnRef"
-              value={txnRef}
-              onChange={(e) => setTxnRef(e.target.value)}
-              placeholder="e.g. FT2501011234567"
-            />
-          </div>
+            
 
           <FileUpload
             label="Payment Proof"
@@ -207,6 +200,15 @@ export function FeePaymentView({ onSubmitted }: Props) {
             value={proof}
             compact
           />
+
+          <Label htmlFor="txnRef">Transaction Reference / TID <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input
+              id="txnRef"
+              value={txnRef}
+              onChange={(e) => setTxnRef(e.target.value)}
+              placeholder="e.g. FT2501011234567"
+            />
+          </div>
 
           <Button
             className="w-full rounded-lg bg-brand-gradient text-white shadow-md hover:opacity-95"

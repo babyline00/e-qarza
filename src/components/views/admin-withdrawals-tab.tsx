@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { api } from '@/lib/api-client'
+import { useAdminRefresh } from '@/lib/use-admin-refresh'
 import { fmtPKR, fmtDateTime } from '@/lib/format'
 import { toast } from 'sonner'
 import { ArrowUpFromLine, Loader2, Check, X, Inbox, Clock } from 'lucide-react'
@@ -29,10 +30,10 @@ export function AdminWithdrawalsTab() {
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true)
     try {
-      const r = await api<{ withdrawals: WithdrawalItem[] }>('/api/admin/withdrawals')
+      const r = await api<{ withdrawals: WithdrawalItem[] }>('/api/admin/withdrawals', { force })
       setWithdrawals(r.withdrawals)
     } catch (e) {
       toast.error((e as Error).message)
@@ -46,6 +47,8 @@ export function AdminWithdrawalsTab() {
     const t = setInterval(load, 15000)
     return () => clearInterval(t)
   }, [load])
+
+  useAdminRefresh(useCallback(() => load(true), [load]))
 
   async function act(id: string, action: 'approve' | 'reject') {
     setActing(id + action)

@@ -127,6 +127,50 @@ export function AuthView({ onAuthed }: Props) {
                 {mode === 'login' ? 'Sign in with your phone number' : 'Sign up with your phone number'}
               </p>
             </div>
+            {/* App download buttons — OUTSIDE the card, below it */}
+
+
+{appDownloads.length > 0 && (
+  <div className="mt-5 flex items-center justify-center gap-3 mb-10">
+    {appDownloads.map((app) => (
+      <a
+        key={app.id}
+        href={app.filePath}
+        download
+        className="group flex h-14 min-w-[190px] items-center gap-3 rounded-xl border border-border bg-card px-4 shadow-sm transition-all hover:border-primary/40 hover:bg-accent hover:shadow-md"
+      >
+        <Logo
+  variant="full"
+  className="[&_span:first-child]:size-12 [&_span:first-child>svg]:size-7"
+/>
+        {/* Platform Logo */}
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-black text-white">
+          {app.platform === "android" ? (
+            <Smartphone className="size-5" />
+          ) : (
+            <Apple className="size-5" />
+          )}
+        </div>
+
+        {/* Text */}
+        <div className="flex-1 leading-tight">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Download on
+          </p>
+
+          <p className="text-sm font-semibold tracking-tight">
+            {app.platform === "android"
+              ? "Google Play"
+              : "App Store"}
+          </p>
+        </div>
+
+        {/* Download Icon */}
+        <Download className="size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5 group-hover:text-primary" />
+      </a>
+    ))}
+  </div>
+)}
 
             <Tabs value={mode} onValueChange={(v) => setMode(v as 'login' | 'signup')}>
               <TabsList className="grid w-full grid-cols-2 mb-5 rounded-lg bg-muted p-1">
@@ -267,29 +311,7 @@ export function AuthView({ onAuthed }: Props) {
         </Card>
 
         {/* App download buttons — OUTSIDE the card, below it */}
-        {appDownloads.length > 0 && (
-          <div className="mt-4 flex items-center justify-center gap-3">
-            {appDownloads.map((app) => (
-              <a
-                key={app.id}
-                href={app.filePath}
-                download
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-medium shadow-sm transition hover:border-primary/30 hover:bg-accent"
-              >
-                {app.platform === 'android' ? (
-                  <Smartphone className="size-4 text-primary" />
-                ) : (
-                  <Apple className="size-4 text-primary" />
-                )}
-                <div className="leading-tight">
-                  <p className="font-semibold">{app.platform === 'android' ? 'Android' : 'iOS'}</p>
-                  <p className="text-[10px] text-muted-foreground">v{app.version}</p>
-                </div>
-                <Download className="size-3.5 text-muted-foreground" />
-              </a>
-            ))}
-          </div>
-        )}
+        
       </div>
     </div>
   )

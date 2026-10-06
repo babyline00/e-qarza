@@ -47,15 +47,15 @@ interface MeResponse {
 export function AppShell() {
   const {
     user, kyc, applications, activeView, loading,
-    setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setCredit, setLoading, setView, logout,
+    setUser, setKyc, setApplications, setNotifications, setBankDetails, setPlans, setCredit, setLoading, setView, logout, refreshAdmin,
   } = useAppStore()
 
   const prevNotifCount = useRef(0)
   const isFirstRefresh = useRef(true)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     try {
-      const data = await api<MeResponse>('/api/me')
+      const data = await api<MeResponse>('/api/me', { force })
       setUser(data.user as never)
       setKyc(data.kyc as never)
       setApplications(data.applications as never)
@@ -96,9 +96,22 @@ export function AppShell() {
     logout()
   }, [logout])
 
+  // Admin refresh: /api/me only returns the admin's own profile, so also bump
+  // the shared signal that every admin tab listens to for a real data reload.
+  // `force` bypasses the 15s GET cache, otherwise a refresh right after a poll
+  // returns cached data and looks broken.
+  const handleAdminRefresh = useCallback(() => {
+    refresh(true)
+    refreshAdmin()
+  }, [refresh, refreshAdmin])
+
+  // Dashboard is only reachable once the KYC has been approved.
+  const kycStatus = kyc?.status as string | undefined
+  const kycApproved = kycStatus === 'approved'
+
   // keyboard shortcuts — must be called unconditionally (hooks rules)
-  // enabled only for active regular users
-  useKeyboardShortcuts({ onNavigate: setView, enabled: !!user && user.role !== 'admin' && user.stage === 'active' })
+  // enabled only for active regular users with an approved KYC
+  useKeyboardShortcuts({ onNavigate: setView, enabled: !!user && user.role !== 'admin' && user.stage === 'active' && kycApproved })
 
   if (loading) {
     return (
@@ -128,7 +141,7 @@ export function AppShell() {
   if (user.role === 'admin') {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <TopNav onLogout={handleLogout} onRefresh={refresh} />
+        <TopNav onLogout={handleLogout} onRefresh={handleAdminRefresh} />
         <main className="flex-1">
           <AdminView />
         </main>
@@ -139,11 +152,18 @@ export function AppShell() {
 
   // Resolve view for regular user
   const latestApp = applications[0] as { status?: string } | undefined
-  const autoView = resolveView(user.stage, kyc?.status as string | undefined, latestApp?.status)
-  // active users can navigate freely among dashboard views
-  const view = user.stage === 'active' ? (activeView === 'auth' ? 'dashboard' : activeView) : autoView
-  // Lock navigation when waiting for admin approval — user cannot leave the waiting screen
-  const isLocked = user.stage === 'kyc_pending' || user.stage === 'fee_pending' || view === 'kyc_pending' || view === 'fee_pending'
+  const autoView = resolveView(user.stage, kycStatus, latestApp?.status)
+  // active users can navigate freely among dashboard views — but only once KYC is approved
+  const view = user.stage === 'active' && kycApproved
+    ? (activeView === 'auth' ? 'dashboard' : activeView)
+    : autoView
+  // Lock navigation when waiting for admin approval — user cannot leave the waiting screen.
+  // Also lock whenever KYC is not approved, so the dashboard is unreachable by navigating.
+  const isLocked = !kycApproved
+    || user.stage === 'kyc_pending'
+    || user.stage === 'fee_pending'
+    || view === 'kyc_pending'
+    || view === 'fee_pending'
 
   let content: React.ReactNode = null
   switch (view) {

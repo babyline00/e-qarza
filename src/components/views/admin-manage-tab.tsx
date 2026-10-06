@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { api } from '@/lib/api-client'
+import { useAdminRefresh } from '@/lib/use-admin-refresh'
 import { fmtPKR } from '@/lib/format'
 import { toast } from 'sonner'
 import {
@@ -44,12 +45,12 @@ export function AdminManageTab() {
   const [editingBank, setEditingBank] = useState<Partial<Bank> | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true)
     try {
       const [p, b] = await Promise.all([
-        api<{ plans: Plan[] }>('/api/admin/plans'),
-        api<{ banks: Bank[] }>('/api/admin/banks'),
+        api<{ plans: Plan[] }>('/api/admin/plans', { force }),
+        api<{ banks: Bank[] }>('/api/admin/banks', { force }),
       ])
       setPlans(p.plans)
       setBanks(b.banks)
@@ -63,6 +64,8 @@ export function AdminManageTab() {
   useEffect(() => {
     load()
   }, [load])
+
+  useAdminRefresh(useCallback(() => load(true), [load]))
 
   async function savePlan() {
     if (!editingPlan) return

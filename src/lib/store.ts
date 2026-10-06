@@ -127,6 +127,8 @@ interface AppState {
   credit: CreditInfo | null
   activeView: View
   loading: boolean
+  /** Bumped by the admin refresh button so every admin tab can re-fetch. */
+  adminRefreshKey: number
 
   setUser: (u: UserData | null) => void
   setKyc: (k: KycData | null) => void
@@ -137,6 +139,7 @@ interface AppState {
   setCredit: (c: CreditInfo | null) => void
   setView: (v: View) => void
   setLoading: (l: boolean) => void
+  refreshAdmin: () => void
   logout: () => void
 }
 
@@ -150,6 +153,7 @@ export const useAppStore = create<AppState>((set) => ({
   credit: null,
   activeView: 'auth',
   loading: true,
+  adminRefreshKey: 0,
 
   setUser: (u) => set({ user: u }),
   setKyc: (k) => set({ kyc: k }),
@@ -160,6 +164,7 @@ export const useAppStore = create<AppState>((set) => ({
   setCredit: (c) => set({ credit: c }),
   setView: (v) => set({ activeView: v }),
   setLoading: (l) => set({ loading: l }),
+  refreshAdmin: () => set((s) => ({ adminRefreshKey: s.adminRefreshKey + 1 })),
   logout: () =>
     set({
       user: null,
@@ -170,5 +175,6 @@ export const useAppStore = create<AppState>((set) => ({
       plans: [],
       activeView: 'auth',
       loading: false,
+      adminRefreshKey: 0,
     }),
 }))

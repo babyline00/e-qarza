@@ -216,14 +216,35 @@ export function KycView({ onDone }: Props) {
                 <div className="space-y-1.5">
                   <Label htmlFor="cnicNumber" className="text-sm font-medium">CNIC Number</Label>
                   <Input
-                    id="cnicNumber"
-                    className="rounded-lg"
-                    value={cnicNumber}
-                    onChange={(e) => setCnicNumber(e.target.value)}
-                    placeholder="35202-1234567-1"
-                    inputMode="numeric"
-                    maxLength={15}
-                  />
+                      id="cnicNumber"
+                      className="rounded-lg"
+                      value={cnicNumber}
+                      onChange={(e) => {
+                        // Remove everything except numbers
+                        let value = e.target.value.replace(/\D/g, "");
+
+                        // Limit to 13 digits
+                        value = value.slice(0, 13);
+
+                        // Format: 35202-1234567-1
+                        if (value.length > 5) {
+                          value = value.slice(0, 5) + "-" + value.slice(5);
+                        }
+
+                        if (value.length > 13) {
+                          value = value.slice(0, 13) + "-" + value.slice(13);
+                        }
+
+                        setCnicNumber(value);
+                      }}
+                      placeholder="35202-1234567-1"
+                      inputMode="numeric"
+                      maxLength={15}
+                      pattern="[0-9]{5}-[0-9]{7}-[0-9]{1}"
+                      required
+                      autoComplete="off"
+                      aria-label="CNIC Number"
+                    />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="dob" className="text-sm font-medium">Date of Birth <span className="text-destructive">*</span>(must be 18+)</Label>
@@ -274,11 +295,11 @@ export function KycView({ onDone }: Props) {
           {/* STEP 2 */}
           {step === 1 && (
             <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium">Education</Label>
                   <Select value={education} onValueChange={setEducation}>
-                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select education" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg w-40"><SelectValue placeholder="Select education" /></SelectTrigger>
                     <SelectContent>
                       {['Matriculation', 'Intermediate', 'Bachelor\'s', 'Master\'s', 'MPhil / PhD', 'Other'].map((e) => (
                         <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -289,7 +310,7 @@ export function KycView({ onDone }: Props) {
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium">Marital Status</Label>
                   <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg w-40"><SelectValue placeholder="Select status" /></SelectTrigger>
                     <SelectContent>
                       {['Single', 'Married', 'Divorced', 'Widowed'].map((m) => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
@@ -317,11 +338,11 @@ export function KycView({ onDone }: Props) {
                 </RadioGroup>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
+              <div className="grid gap-4 grid-cols-1">
+                <div className="space-y-1">
                   <Label className="text-sm font-medium">City</Label>
                   <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select city" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg w-64"><SelectValue placeholder="Select city" /></SelectTrigger>
                     <SelectContent className="max-h-72">
                       {PAKISTANI_CITIES.map((c) => (
                         <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -329,16 +350,7 @@ export function KycView({ onDone }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Occupation</Label>
-                  <Input
-                    id="occupation"
-                    className="rounded-lg"
-                    value={occupation}
-                    onChange={(e) => setOccupation(e.target.value)}
-                    placeholder="e.g. Teacher, Driver"
-                  />
-                </div>
+                
               </div>
 
               <div className="space-y-1.5">
@@ -352,12 +364,22 @@ export function KycView({ onDone }: Props) {
                   rows={2}
                 />
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Occupation</Label>
+                  <Input
+                    id="occupation"
+                    className="rounded-lg"
+                    value={occupation}
+                    onChange={(e) => setOccupation(e.target.value)}
+                    placeholder="e.g. Teacher, Driver"
+                  />
+                </div>
+              <div className="grid gap-4 grid-cols-2">
+                
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium">Employment Status</Label>
                   <Select value={employment} onValueChange={setEmployment}>
-                    <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectTrigger className="rounded-lg w-40"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       {['Employed', 'Self-employed', 'Business', 'Student', 'Unemployed'].map((e) => (
                         <SelectItem key={e} value={e}>{e}</SelectItem>
@@ -371,6 +393,7 @@ export function KycView({ onDone }: Props) {
                     id="income"
                     type="number"
                     min={0}
+                    maxLength={11}
                     className="rounded-lg"
                     value={monthlyIncome}
                     onChange={(e) => setMonthlyIncome(e.target.value)}

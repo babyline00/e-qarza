@@ -13,7 +13,7 @@ import {
 import { InfoBox } from '@/components/shared/info-box'
 
 interface Props {
-  onRefresh: () => void
+  onRefresh: (force?: boolean) => void
 }
 
 interface FeePaymentInfo {
@@ -33,17 +33,17 @@ const STEPS: TimelineStep[] = [
   {
     title: 'Verifying Transaction',
     description: 'Our team is reviewing your payment.',
-    status: 'active',
+    status: 'completed',
   },
   {
     title: 'Updating Loan Account',
     description: 'Activating your loan and creating installments.',
-    status: 'pending',
+    status: 'completed',
   },
   {
     title: 'Final Confirmation',
     description: 'You will be notified once verification is complete.',
-    status: 'pending',
+    status: 'active',
   },
 ]
 
@@ -104,7 +104,7 @@ export function FeePendingView({ onRefresh }: Props) {
         </Card>
       )}
 
-      <Button variant="outline" className="w-full rounded-lg" onClick={onRefresh}>
+      <Button variant="outline" className="w-full rounded-lg" onClick={() => onRefresh(true)}>
         <RefreshCw className="size-4" /> Check Status
       </Button>
     </div>

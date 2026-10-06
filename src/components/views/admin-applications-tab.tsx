@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { api } from '@/lib/api-client'
+import { useAdminRefresh } from '@/lib/use-admin-refresh'
 import { fmtPKR, fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import {
@@ -54,7 +55,7 @@ export function AdminApplicationsTab() {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -62,7 +63,7 @@ export function AdminApplicationsTab() {
       if (fromDate) params.set('from', fromDate)
       if (toDate) params.set('to', toDate)
       const qs = params.toString()
-      const r = await api<{ applications: AppItem[] }>(`/api/admin/applications${qs ? '?' + qs : ''}`)
+      const r = await api<{ applications: AppItem[] }>(`/api/admin/applications${qs ? '?' + qs : ''}`, { force })
       setApps(r.applications)
     } catch (e) {
       toast.error((e as Error).message)
@@ -76,6 +77,8 @@ export function AdminApplicationsTab() {
     const t = setInterval(load, 15000)
     return () => clearInterval(t)
   }, [load])
+
+  useAdminRefresh(useCallback(() => load(true), [load]))
 
   async function confirmReject() {
     if (!rejecting) return

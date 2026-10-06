@@ -49,7 +49,9 @@ export function TopNav({ onLogout, onRefresh, onNavigate, activeView }: Props) {
   // The dashboard-style orange header is only used when the user can actually
   // navigate (i.e. user is active). All pre-dashboard stages (kyc, pending,
   // loan select, fee) use the simpler sticky white header.
-  const isDashboardStage = !isAdmin && user.stage === 'active'
+  // The dashboard also requires an approved KYC — a stale `stage` of "active"
+  // with a pending/rejected KYC must not expose dashboard navigation.
+  const isDashboardStage = !isAdmin && user.stage === 'active' && kyc?.status === 'approved'
 
   const navItems: { label: string; view: View; icon: React.ElementType; badge?: number }[] = [
     { label: 'Dashboard', view: 'dashboard', icon: LayoutDashboard },

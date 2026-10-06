@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { api } from '@/lib/api-client'
+import { useAdminRefresh } from '@/lib/use-admin-refresh'
 import { fmtPKR, timeAgo, fmtDate } from '@/lib/format'
 import { toast } from 'sonner'
 import {
@@ -74,10 +75,10 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true)
     try {
-      const r = await api<{ stats: Stats }>('/api/admin/stats')
+      const r = await api<{ stats: Stats }>('/api/admin/stats', { force })
       setStats(r.stats)
     } catch (e) {
       toast.error((e as Error).message)
@@ -91,6 +92,8 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
     const t = setInterval(load, 20000)
     return () => clearInterval(t)
   }, [load])
+
+  useAdminRefresh(useCallback(() => load(true), [load]))
 
   if (loading && !stats) {
     return (
@@ -142,7 +145,7 @@ export function AdminAnalyticsTab({ onNavigate }: { onNavigate?: (tab: string) =
           <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => window.open('/api/admin/export?type=applications', '_blank')}>
             <Download className="size-3.5" /> Export
           </Button>
-          <Button size="sm" variant="outline" onClick={load} disabled={loading} className="h-8 gap-1.5">
+          <Button size="sm" variant="outline" onClick={() => load(true)} disabled={loading} className="h-8 gap-1.5">
             <RefreshCw className={`size-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
