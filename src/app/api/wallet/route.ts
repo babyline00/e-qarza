@@ -3,14 +3,14 @@ import { db } from '@/lib/db'
 import { getSessionUser } from '@/lib/auth'
 import { getOrCreateWallet } from '@/lib/wallet'
 
-// GET /api/wallet — user's wallet balance + recent transactions + withdrawal requests
+// GET /api/wallet — user's wallet balance + recent transactions + withdrawal requests + active loan breakdown
 export async function GET() {
   const user = await getSessionUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const wallet = await getOrCreateWallet(user.id)
 
-  const [transactions, withdrawals] = await Promise.all([
+  const [transactions, withdrawals, activeLoan] = await Promise.all([
     db.walletTransaction.findMany({
       where: { walletId: wallet.id },
       orderBy: { createdAt: 'desc' },
@@ -21,7 +21,27 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       take: 20,
     }),
+    // Active loan — used to show "Balance = Loan + Processing Fee" breakdown
+    db.loanApplication.findFirst({
+      where: { userId: user.id, status: 'active' },
+      orderBy: { activatedAt: 'desc' },
+      include: { plan: { select: { name: true } } },
+    }),
   ])
+
+  // Build loan breakdown if there's an active loan
+  const loanBreakdown = activeLoan
+    ? {
+        applicationId: activeLoan.id,
+        planName: activeLoan.plan.name,
+        principal: activeLoan.amount, // total loan amount
+        processingFee: activeLoan.processingFee, // fee deducted upfront
+        netDisbursed: activeLoan.amount - activeLoan.processingFee, // amount actually credited to wallet
+        interestRate: activeLoan.interestRate,
+        tenureMonths: activeLoan.tenureMonths,
+        activatedAt: activeLoan.activatedAt?.toISOString() || null,
+      }
+    : null
 
   return NextResponse.json({
     wallet: {
@@ -47,5 +67,6 @@ export async function GET() {
       createdAt: w.createdAt.toISOString(),
       reviewedAt: w.reviewedAt?.toISOString() || null,
     })),
+    loanBreakdown,
   })
 }

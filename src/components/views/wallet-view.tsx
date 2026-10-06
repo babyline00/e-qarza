@@ -39,6 +39,16 @@ interface WalletData {
     createdAt: string
     reviewedAt: string | null
   }[]
+  loanBreakdown?: {
+    applicationId: string
+    planName: string
+    principal: number
+    processingFee: number
+    netDisbursed: number
+    interestRate: number
+    tenureMonths: number
+    activatedAt: string | null
+  } | null
 }
 
 const TXN_ICONS: Record<string, React.ElementType> = {
@@ -146,6 +156,59 @@ export function WalletView() {
           </div>
         </div>
       </Card>
+
+      {/* Loan Breakdown — Balance = Loan (Principal) − Processing Fee */}
+      {data.loanBreakdown && (
+        <Card className="rounded-2xl border-primary/20">
+          <CardContent className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <CheckCircle2 className="size-4 text-success" /> Loan Disbursed
+              </p>
+              <Badge variant="secondary" className="text-[10px]">
+                {data.loanBreakdown.planName} • {data.loanBreakdown.tenureMonths} mo
+              </Badge>
+            </div>
+
+            {/* Breakdown rows */}
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <TrendingUp className="size-3.5 text-success" /> Loan Principal
+                </span>
+                <span className="font-semibold text-success">+ {fmtPKR(data.loanBreakdown.principal)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <TrendingDown className="size-3.5 text-destructive" /> Processing Fee
+                </span>
+                <span className="font-semibold text-destructive">− {fmtPKR(data.loanBreakdown.processingFee)}</span>
+              </div>
+              <Separator className="my-1" />
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-foreground flex items-center gap-1.5">
+                  <ArrowDownToLine className="size-3.5 text-primary" /> Credited to Wallet
+                </span>
+                <span className="font-bold text-primary">{fmtPKR(data.loanBreakdown.netDisbursed)}</span>
+              </div>
+            </div>
+
+            {/* Verification success banner */}
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2">
+              <CheckCircle2 className="size-4 text-success shrink-0" />
+              <p className="text-[11px] text-success font-medium">
+                Verification successful — loan amount (minus fee) has been added to your wallet balance.
+              </p>
+            </div>
+
+            {data.loanBreakdown.activatedAt && (
+              <p className="mt-2 text-[10px] text-muted-foreground text-right">
+                Activated on {fmtDateTime(data.loanBreakdown.activatedAt)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-3">
